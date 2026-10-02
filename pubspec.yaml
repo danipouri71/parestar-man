@@ -1,0 +1,26 @@
+name: parestar_man
+description: پلتفرم خدمات پرستاری در منزل — پرستار من
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  http: ^1.2.0            # ارتباط با سرور
+  shared_preferences: ^2.2.0  # ذخیره نشست ورود
+  shamsi_date: ^1.0.4     # نمایش تاریخ شمسی (تصمیم ۴۳)
+  image_picker: ^1.0.7    # انتخاب عکس نسخه از گالری (تصمیم ۲)
+
+flutter:
+  uses-material-design: true
+  fonts:
+    - family: Vazirmatn
+      fonts:
+        - asset: assets/fonts/Vazirmatn-Regular.ttf
+        - asset: assets/fonts/Vazirmatn-Bold.ttf
+          weight: 700
