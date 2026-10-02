@@ -1,4 +1,6 @@
-// پرستار من — کلاینت API (نسخه ۴ — تمیز)
+// پرستار من — کلاینت API (نسخه ۵ — با پیشوند /api خودکار)
+// چون Laravel مسیرهای routes/api.php را با پیشوند /api سرو می‌کند،
+// همه مسیرها حالا از _base یعنی baseUrl/api ساخته می‌شوند.
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -13,6 +15,10 @@ class ApiException implements Exception {
 class ApiClient {
   ApiClient({required this.baseUrl});
   final String baseUrl;
+
+  /// آدرس کامل شامل پیشوند /api — Laravel خودش این پیشوند را روی routes/api.php می‌گذارد
+  String get _base => '$baseUrl/api';
+
   String? token;
 
   Map<String, String> get _jsonHeaders => {
@@ -37,7 +43,7 @@ class ApiClient {
 
   Future<Map<String, dynamic>> _send(String method, String path,
       {Map<String, dynamic>? body}) async {
-    final uri = Uri.parse('$baseUrl$path');
+    final uri = Uri.parse('$_base$path');
     http.Response res;
     try {
       res = method == 'GET'
@@ -52,7 +58,7 @@ class ApiClient {
 
   Future<Map<String, dynamic>> _upload(String path, Map<String, String> fields,
       String fileField, String filePath) async {
-    final req = http.MultipartRequest('POST', Uri.parse('$baseUrl$path'))
+    final req = http.MultipartRequest('POST', Uri.parse('$_base$path'))
       ..headers.addAll(_authHeaders)
       ..fields.addAll(fields)
       ..files.add(await http.MultipartFile.fromPath(fileField, filePath));
@@ -68,7 +74,8 @@ class ApiClient {
 
   /* ورود */
   Future<void> requestOtp(String mobile) async {
-    await _send('POST', '/auth/request-otp', body: {'mobile': mobile, 'purpose': 'user'});
+    await _send('POST', '/auth/request-otp',
+        body: {'mobile': mobile, 'purpose': 'user'});
   }
 
   Future<Map<String, dynamic>> verifyOtp(String mobile, String code,
