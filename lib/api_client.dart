@@ -1,5 +1,4 @@
-// پرستار من — تکه ۱۰: کلاینت API (نسخه ۳ — جایگزین کامل تکه ۹)
-// اضافه‌شده: پرداخت، امتیاز، چت، اعلان‌ها
+// پرستار من — کلاینت API (نسخه ۴ — تمیز)
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -26,7 +25,7 @@ class ApiClient {
     if (token != null) 'Authorization': 'Bearer $token',
   };
 
-  dynamic _handle(http.Response res) {
+  Map<String, dynamic> _handle(http.Response res) {
     final data = res.body.isEmpty
         ? <String, dynamic>{}
         : jsonDecode(res.body) as Map<String, dynamic>;
@@ -36,7 +35,8 @@ class ApiClient {
     return data;
   }
 
-  Future<dynamic> _send(String method, String path, {Map<String, dynamic>? body}) async {
+  Future<Map<String, dynamic>> _send(String method, String path,
+      {Map<String, dynamic>? body}) async {
     final uri = Uri.parse('$baseUrl$path');
     http.Response res;
     try {
@@ -44,15 +44,13 @@ class ApiClient {
           ? await http.get(uri, headers: _jsonHeaders).timeout(const Duration(seconds: 20))
           : await http.post(uri, headers: _jsonHeaders,
               body: jsonEncode(body ?? {})).timeout(const Duration(seconds: 20));
-    } on ApiException {
-      rethrow;
     } catch (_) {
       throw ApiException('ارتباط با سرور برقرار نشد. اینترنت خود را بررسی کنید.');
     }
     return _handle(res);
   }
 
-  Future<dynamic> _upload(String path, Map<String, String> fields,
+  Future<Map<String, dynamic>> _upload(String path, Map<String, String> fields,
       String fileField, String filePath) async {
     final req = http.MultipartRequest('POST', Uri.parse('$baseUrl$path'))
       ..headers.addAll(_authHeaders)
@@ -68,12 +66,13 @@ class ApiClient {
     return _handle(res);
   }
 
-  /* ================= ورود ================= */
+  /* ورود */
+  Future<void> requestOtp(String mobile) async {
+    await _send('POST', '/auth/request-otp', body: {'mobile': mobile, 'purpose': 'user'});
+  }
 
-  Future<void> requestOtp(String mobile) =>
-      _send('POST', '/auth/request-otp', body: {'mobile': mobile, 'purpose': 'user'});
-
-  Future<Map<String, dynamic>> verifyOtp(String mobile, String code, String fullName) async {
+  Future<Map<String, dynamic>> verifyOtp(String mobile, String code,
+      String fullName) async {
     final r = await _send('POST', '/auth/verify', body: {
       'mobile': mobile, 'purpose': 'user', 'code': code, 'full_name': fullName,
     });
@@ -81,59 +80,73 @@ class ApiClient {
     return r;
   }
 
-  /* ================= خدمات و پایه ================= */
+  /* خدمات و پایه */
+  Future<List<dynamic>> services() async =>
+      (await _send('GET', '/services'))['data'] as List<dynamic>;
 
-  Future<List<dynamic>> services() async => (await _send('GET', '/services'))['data'];
-  Future<List<dynamic>> addresses() async => (await _send('GET', '/addresses'))['data'];
-  Future<void> addAddress(Map<String, dynamic> d) => _send('POST', '/addresses', body: d);
-  Future<List<dynamic>> patients() async => (await _send('GET', '/patients'))['data'];
+  Future<List<dynamic>> addresses() async =>
+      (await _send('GET', '/addresses'))['data'] as List<dynamic>;
+
+  Future<void> addAddress(Map<String, dynamic> d) async {
+    await _send('POST', '/addresses', body: d);
+  }
+
+  Future<List<dynamic>> patients() async =>
+      (await _send('GET', '/patients'))['data'] as List<dynamic>;
+
   Future<Map<String, dynamic>> quote(Map<String, dynamic> d) =>
       _send('POST', '/orders/quote', body: d);
-  Future<Map<String, dynamic>> me() => (await _send('GET', '/me')) as Map<String, dynamic>;
 
-  /* ================= سفارش‌ها ================= */
+  Future<Map<String, dynamic>> me() => _send('GET', '/me');
 
-  Future<Map<String, dynamic>> activeOrder() => (await _send('GET', '/orders/active')) as Map<String, dynamic>;
+  /* سفارش‌ها */
+  Future<Map<String, dynamic>> activeOrder() => _send('GET', '/orders/active');
 
   Future<Map<String, dynamic>> createOrder(Map<String, dynamic> d,
       {String? prescriptionPath}) async {
     if (prescriptionPath != null && prescriptionPath.isNotEmpty) {
-      return (await _upload('/orders', d.map((k, v) => MapEntry(k, v?.toString() ?? '')),
+      return _upload('/orders', d.map((k, v) => MapEntry(k, v?.toString() ?? '')),
           'prescription', prescriptionPath);
     }
-    return await _send('POST', '/orders', body: d) as Map<String, dynamic>;
+    return _send('POST', '/orders', body: d);
   }
 
-  Future<Map<String, dynamic>> orderDetails(int id) => (await _send('GET', '/orders/$id')) as Map<String, dynamic>;
-  Future<void> cancelOrder(int id) => _send('POST', '/orders/$id/cancel');
-  Future<List<dynamic>> orderHistory() async => (await _send('GET', '/orders'))['data'];
+  Future<Map<String, dynamic>> orderDetails(int id) => _send('GET', '/orders/$id');
 
-  /* ================= پرداخت — تکه ۶ سرور ================= */
+  Future<void> cancelOrder(int id) async {
+    await _send('POST', '/orders/$id/cancel');
+  }
 
-  Future<void> payOnline(int orderId, int tip) =>
-      _send('POST', '/orders/$orderId/pay-online', body: {'tip': tip});
+  Future<List<dynamic>> orderHistory() async =>
+      (await _send('GET', '/orders'))['data'] as List<dynamic>;
 
-  Future<void> payCash(int orderId, int tip) =>
-      _send('POST', '/orders/$orderId/pay-cash', body: {'tip': tip});
+  /* پرداخت */
+  Future<void> payOnline(int orderId, int tip) async {
+    await _send('POST', '/orders/$orderId/pay-online', body: {'tip': tip});
+  }
 
-  /* ================= امتیاز — U12 ================= */
+  Future<void> payCash(int orderId, int tip) async {
+    await _send('POST', '/orders/$orderId/pay-cash', body: {'tip': tip});
+  }
 
-  Future<void> submitReview(int orderId, int stars, List<String> tags, String comment) =>
-      _send('POST', '/orders/$orderId/review', body: {
-        'stars': stars, 'tags': tags, 'comment': comment,
-      });
+  /* امتیاز */
+  Future<void> submitReview(int orderId, int stars, List<String> tags,
+      String comment) async {
+    await _send('POST', '/orders/$orderId/review',
+        body: {'stars': stars, 'tags': tags, 'comment': comment});
+  }
 
-  /* ================= چت — تصمیم ۴۶ ================= */
-
+  /* چت */
   Future<List<dynamic>> chatMessages(int orderId, {int afterId = 0}) async {
     final r = await _send('GET', '/orders/$orderId/chat?after_id=$afterId');
-    return r['data'] ?? r;
+    return (r['data'] ?? r) as List<dynamic>;
   }
 
-  Future<void> sendChat(int orderId, String text) =>
-      _send('POST', '/orders/$orderId/chat', body: {'text': text});
+  Future<void> sendChat(int orderId, String text) async {
+    await _send('POST', '/orders/$orderId/chat', body: {'text': text});
+  }
 
-  /* ================= اعلان‌ها ================= */
-
-  Future<List<dynamic>> notifications() async => (await _send('GET', '/notifications'))['data'];
+  /* اعلان‌ها */
+  Future<List<dynamic>> notifications() async =>
+      (await _send('GET', '/notifications'))['data'] as List<dynamic>;
 }

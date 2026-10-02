@@ -1,5 +1,4 @@
-// پرستار من — تکه ۱۰: تاریخچه و جزئیات — وایرفریم‌های U13 و U14
-// فیلتر + نشان رنگی وضعیت + فاکتور گذشته + سفارش مجدد
+// پرستار من — تکه ۱۰: تاریخچه و جزئیات — وایرفریم‌های U13/U14 (نسخه هم‌خوان)
 
 import 'package:flutter/material.dart';
 import '../api_client.dart';
@@ -11,7 +10,7 @@ import 'order_wizard.dart';
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key, required this.api, this.embedded = false});
   final ApiClient api;
-  final bool embedded; // وقتی داخل تب خانه است، Scaffold خودش را ندارد
+  final bool embedded;
 
   @override
   State<HistoryScreen> createState() => _HistoryScreenState();
@@ -19,7 +18,7 @@ class HistoryScreen extends StatefulWidget {
 
 class _HistoryScreenState extends State<HistoryScreen> {
   List _all = [];
-  int _filter = 0; // 0 همه / 1 جاری / 2 انجام‌شده
+  int _filter = 0;
   bool _loading = true;
 
   @override
@@ -45,11 +44,11 @@ class _HistoryScreenState extends State<HistoryScreen> {
   }).toList();
 
   Color _badgeColor(String s) => s == 'completed'
-      ? const Color(0xFF0F9D6A) : (s == 'cancelled' || s == 'expired'
-          ? const Color(0xFFDC2626) : const Color(0xFFB45309));
+      ? const Color(0xFF0F9D6A)
+      : (s == 'cancelled' || s == 'expired' ? const Color(0xFFDC2626) : const Color(0xFFB45309));
   Color _badgeBg(String s) => s == 'completed'
-      ? const Color(0xFFE8F7F0) : (s == 'cancelled' || s == 'expired'
-          ? const Color(0xFFFDEEEE) : const Color(0xFFFFF8E6));
+      ? const Color(0xFFE8F7F0)
+      : (s == 'cancelled' || s == 'expired' ? const Color(0xFFFDEEEE) : const Color(0xFFFFF8E6));
 
   @override
   Widget build(BuildContext context) {
@@ -75,19 +74,18 @@ class _HistoryScreenState extends State<HistoryScreen> {
                     final svc = o['service'] as Map<String, dynamic>? ?? {};
                     return Card(child: ListTile(
                       title: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                        Text('${svc['icon'] ?? '💉'} ${svc['name'] ?? ''}',
+                        Expanded(child: Text('${svc['icon'] ?? '💉'} ${svc['name'] ?? ''}',
                             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
-                            overflow: TextOverflow.ellipsis),
+                            overflow: TextOverflow.ellipsis)),
                         Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                          decoration: BoxDecoration(color: _badgeBg(s),
-                            borderRadius: BorderRadius.circular(8)),
+                          decoration: BoxDecoration(color: _badgeBg(s), borderRadius: BorderRadius.circular(8)),
                           child: Text((o['status_label'] ?? s).toString(),
-                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold,
-                                color: _badgeColor(s)))),
+                              style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold,
+                                  color: _badgeColor(s)))),
                       ]),
                       subtitle: Padding(padding: const EdgeInsets.only(top: 4),
                         child: Text('${o['created_at_label'] ?? ''}'
-                            '${o['nurse_name'] != null ? ' — ${(o['nurse_name']).toString()}' : ''}',
+                            '${o['nurse_name'] != null ? ' — ${o['nurse_name']}' : ''}',
                             style: const TextStyle(fontSize: 11))),
                       trailing: o['total'] != null
                           ? Text('${money((o['total'] as num).toInt())}',
@@ -95,7 +93,8 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                   color: AppColors.teal))
                           : null,
                       onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                          builder: (_) => _DetailScreen(api: widget.api, orderId: (o['id'] as num).toInt()))),
+                          builder: (_) => _DetailScreen(api: widget.api,
+                              orderId: (o['id'] as num).toInt()))),
                     ));
                   }))),
     ]);
@@ -103,12 +102,13 @@ class _HistoryScreenState extends State<HistoryScreen> {
     if (widget.embedded) return body;
     return Directionality(textDirection: TextDirection.rtl, child: Scaffold(
       appBar: AppBar(backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white, title: const Text('تاریخچه سفارش‌ها', style: TextStyle(fontSize: 15))),
+        foregroundColor: Colors.white, title: const Text('تاریخچه سفارش‌ها',
+            style: TextStyle(fontSize: 15))),
       body: body));
   }
 }
 
-/* ═══════════ U14 — جزئیات سفارش گذشته ═══════════ */
+/* ═══ U14 — جزئیات سفارش گذشته ═══ */
 
 class _DetailScreen extends StatefulWidget {
   const _DetailScreen({required this.api, required this.orderId});
@@ -141,9 +141,23 @@ class _DetailState extends State<_DetailScreen> {
     padding: const EdgeInsets.symmetric(vertical: 4),
     child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
       Text(l, style: const TextStyle(fontSize: 12.5, color: AppColors.subLight)),
-      Text(v, style: TextStyle(fontSize: 12.5, fontWeight: bold ? FontWeight.bold : FontWeight.normal,
-          color: bold ? AppColors.teal : null)),
+      Expanded(child: Text(v, textAlign: TextAlign.left,
+          style: TextStyle(fontSize: 12.5, fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+              color: bold ? AppColors.teal : null))),
     ]));
+
+  List<Widget> _invRows(Map<String, dynamic> inv) => [
+    _row('هزینه خدمت', '${money((inv['base_price'] as num).toInt())} تومان'),
+    _row('رفت‌وآمد', '${money((inv['travel_fee'] as num).toInt())} تومان'),
+    if ((inv['urgency_amount'] as num).toInt() > 0)
+      _row('فوریت', '${money((inv['urgency_amount'] as num).toInt())} تومان'),
+    if ((inv['consumables_total'] as num).toInt() > 0)
+      _row('وسایل مصرفی', '${money((inv['consumables_total'] as num).toInt())} تومان'),
+    if ((inv['tip'] as num).toInt() > 0)
+      _row('انعام', '${money((inv['tip'] as num).toInt())} تومان'),
+    _row('جمع (${inv['method'] == 'cash' ? 'نقدی' : 'آنلاین'})',
+        '${money((inv['total'] as num).toInt())} تومان', bold: true),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -159,19 +173,7 @@ class _DetailState extends State<_DetailScreen> {
               _row('پرستار', ((o['nurse'] as Map<String, dynamic>?)?['name'] ?? '—').toString()),
               _row('آدرس', (o['address_text'] ?? '—').toString()),
               const Divider(height: 18),
-              if (o['invoice'] != null) ...[
-                final inv = o['invoice'] as Map<String, dynamic>,
-                _row('هزینه خدمت', '${money((inv['base_price'] as num).toInt())} تومان'),
-                _row('رفت‌وآمد', '${money((inv['travel_fee'] as num).toInt())} تومان'),
-                if ((inv['urgency_amount'] as num).toInt() > 0)
-                  _row('فوریت', '${money((inv['urgency_amount'] as num).toInt())} تومان'),
-                if ((inv['consumables_total'] as num).toInt() > 0)
-                  _row('وسایل مصرفی', '${money((inv['consumables_total'] as num).toInt())} تومان'),
-                if ((inv['tip'] as num).toInt() > 0)
-                  _row('انعام', '${money((inv['tip'] as num).toInt())} تومان'),
-                _row('جمع (${inv['method'] == 'cash' ? 'نقدی' : 'آنلاین'})',
-                    '${money((inv['total'] as num).toInt())} تومان', bold: true),
-              ],
+              if (o['invoice'] != null) ..._invRows(o['invoice'] as Map<String, dynamic>),
               const SizedBox(height: 16),
               if (o['review_submitted'] == true)
                 const Center(child: Text('امتیاز شما ثبت شد ✓',
@@ -185,7 +187,8 @@ class _DetailState extends State<_DetailScreen> {
                       'needs_doctor_order': svc['needs_doctor_order'] ?? 'no',
                       'care_mode': svc['care_mode'] ?? 0,
                     })));
-              }, icon: const Icon(Icons.repeat), label: const Text('🔁 سفارش مجدد همین خدمت')),
+              }, icon: const Icon(Icons.repeat),
+                  label: const Text('🔁 سفارش مجدد همین خدمت')),
             ]),
     ));
   }

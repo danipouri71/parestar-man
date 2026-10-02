@@ -1,5 +1,4 @@
-// پرستار من — تکه ۱۰: پیگیری زنده — وایرفریم U9
-// تایم‌لاین مصوب + پرستار + دکمه‌های چت/پرداخت/امتیاز + به‌روزرسانی هر ۸ ثانیه
+// پرستار من — تکه ۱۰: پیگیری زنده — وایرفریم U9 (نسخه هم‌خوان با HomeScreen(api))
 
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -36,7 +35,11 @@ class _TrackScreenState extends State<TrackScreen> {
   Timer? _poll;
 
   @override
-  void initState() { super.initState(); _load(); _poll = Timer.periodic(const Duration(seconds: 8), (_) => _load(silent: true)); }
+  void initState() {
+    super.initState();
+    _load();
+    _poll = Timer.periodic(const Duration(seconds: 8), (_) => _load(silent: true));
+  }
 
   @override
   void dispose() { _poll?.cancel(); super.dispose(); }
@@ -75,11 +78,10 @@ class _TrackScreenState extends State<TrackScreen> {
     final reviewed = o['review_submitted'] == true;
     final widgets = <Widget>[];
 
-    // پرستار — مثل U8/U9
     if (nurse != null) {
       widgets.add(Card(child: Padding(padding: const EdgeInsets.all(14), child: Row(children: [
-        CircleAvatar(radius: 26, backgroundColor: AppColors.tealSoft,
-            child: const Text('👨‍⚕️', style: TextStyle(fontSize: 24))),
+        const CircleAvatar(radius: 26, backgroundColor: AppColors.tealSoft,
+            child: Text('👨‍⚕️', style: TextStyle(fontSize: 24))),
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text((nurse['name'] ?? '').toString(),
@@ -91,7 +93,6 @@ class _TrackScreenState extends State<TrackScreen> {
       widgets.add(const SizedBox(height: 12));
     }
 
-    // تایم‌لاین — U9
     final idx = _steps.indexWhere((s) => s.$1 == status);
     if (idx >= 0) {
       widgets.add(Card(child: Padding(padding: const EdgeInsets.all(14), child: Column(
@@ -117,7 +118,6 @@ class _TrackScreenState extends State<TrackScreen> {
       widgets.add(const SizedBox(height: 12));
     }
 
-    // وضعیت‌های خاص
     if (status == 'cancelled' || status == 'expired') {
       widgets.add(Container(padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(color: const Color(0xFFFDEEEE),
@@ -127,15 +127,16 @@ class _TrackScreenState extends State<TrackScreen> {
       widgets.add(const SizedBox(height: 12));
     }
 
-    // دکمه پرداخت — فقط از وضعیت درست (تکه ۶ سرور هم قفل است)
     final cashPending = invoice != null && invoice['status'] == 'awaiting'
-        && invoice['method'] == 'cash' && invoice['cash_user_marked_at'] != null;
+        && (invoice['method'] == 'cash') && invoice['cash_user_marked_at'] != null;
+
     if (status == 'awaiting_payment' && invoice != null && !cashPending) {
       widgets.add(FilledButton.icon(onPressed: () async {
         await Navigator.of(context).push(MaterialPageRoute(
             builder: (_) => PaymentScreen(api: widget.api, order: o)));
         _load(silent: true);
-      }, icon: const Icon(Icons.payment), label: Text('پرداخت فاکتور — ${money((invoice['total'] as num).toInt())} تومان')));
+      }, icon: const Icon(Icons.payment),
+          label: Text('پرداخت فاکتور — ${money((invoice['total'] as num).toInt())} تومان')));
       widgets.add(const SizedBox(height: 12));
     }
     if (cashPending) {
@@ -147,7 +148,6 @@ class _TrackScreenState extends State<TrackScreen> {
       widgets.add(const SizedBox(height: 12));
     }
 
-    // امتیاز — U12
     if (status == 'completed' && !reviewed) {
       widgets.add(FilledButton.icon(onPressed: () async {
         await Navigator.of(context).push(MaterialPageRoute(
@@ -163,7 +163,6 @@ class _TrackScreenState extends State<TrackScreen> {
       widgets.add(const SizedBox(height: 12));
     }
 
-    // چت — تصمیم ۳۲
     if (nurse != null && status != 'cancelled' && status != 'expired') {
       widgets.add(OutlinedButton.icon(onPressed: () {
         Navigator.of(context).push(MaterialPageRoute(
@@ -174,7 +173,7 @@ class _TrackScreenState extends State<TrackScreen> {
     }
 
     widgets.add(OutlinedButton(onPressed: () => Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const HomeScreen(api: widget.api)), (_) => false),
+        MaterialPageRoute(builder: (_) => HomeScreen(api: widget.api)), (_) => false),
         child: const Text('بازگشت به خانه')));
     return widgets;
   }

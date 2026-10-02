@@ -1,5 +1,4 @@
-// پرستار من — تکه ۱۰: امتیاز و نظر — وایرفریم U12
-// یک امتیاز برای هر سفارش (UNIQUE در دیتابیس) + برچسب‌های مصوب
+// پرستار من — تکه ۱۰: امتیاز و نظر — وایرفریم U12 (نسخه هم‌خوان)
 
 import 'package:flutter/material.dart';
 import '../api_client.dart';
@@ -42,7 +41,7 @@ class _RatingScreenState extends State<RatingScreen> {
       ));
       if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (_) => const HomeScreen(api: widget.api)), (_) => false);
+          MaterialPageRoute(builder: (_) => HomeScreen(api: widget.api)), (_) => false);
     } on ApiException catch (e) {
       _snack(e.toString());
       setState(() => _busy = false);
