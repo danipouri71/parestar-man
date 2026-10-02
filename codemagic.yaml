@@ -1,0 +1,24 @@
+# پرستار من — تنظیمات بیلد ابری Codemagic
+workflows:
+  android-debug:
+    name: Parestar Man — Android Debug
+    max_build_duration: 30
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: دریافت پکیج‌ها
+        script: flutter pub get
+      - name: بیلد APK
+        script: flutter build apk --debug
+    artifacts:
+      - build/app/outputs/flutter-apk/app-debug.apk
+    publishing:
+      email:
+        recipients:
+          - danipouri71@gmail.com
+        notify:
+          success: true
+          failure: true
