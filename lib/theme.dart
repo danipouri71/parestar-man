@@ -1,4 +1,4 @@
-// پرستار من — تم اپ (نسخه ۳ — توابع رنگ context-محور برای مبالغ همیشه‌خوانا)
+// پرستار من — تم اپ (نسخه ۴ — نهایی: onSecondary + توابع رنگ context-محور)
 
 import 'package:flutter/material.dart';
 
@@ -28,7 +28,7 @@ class AppColors {
   static const danger    = Color(0xFFDC2626);
   static const info      = Color(0xFF1D6FB8);
 
-  /// رنگ متن اصلی — بر اساس تم فعلی (برای هر متن ثابت که در هر دو حالت نمایش داده می‌شود)
+  /// رنگ متن اصلی — بر اساس تم فعلی
   static Color textOf(BuildContext c) =>
       Theme.of(c).brightness == Brightness.dark ? textDark : textLight;
 
@@ -36,17 +36,17 @@ class AppColors {
   static Color subOf(BuildContext c) =>
       Theme.of(c).brightness == Brightness.dark ? subDark : subLight;
 
-  /// رنگ مبلغ — همیشه پررنگ و کاملاً خوانا در هر دو حالت (قاعده: مبالغ هرگز کم‌رنگ!)
+  /// رنگ مبلغ — همیشه پررنگ و خوانا در هر دو حالت
   static Color amountOf(BuildContext c) =>
       Theme.of(c).brightness == Brightness.dark ? tealNight : teal;
-
-  /// رنگ سطح کارت — context-محور
-  static Color cardOf(BuildContext c) =>
-      Theme.of(c).brightness == Brightness.dark ? cardDark : cardLight;
 
   /// رنگ خط جداکننده — context-محور
   static Color lineOf(BuildContext c) =>
       Theme.of(c).brightness == Brightness.dark ? lineDark : lineLight;
+
+  /// رنگ سطح کارت — context-محور
+  static Color cardOf(BuildContext c) =>
+      Theme.of(c).brightness == Brightness.dark ? cardDark : cardLight;
 }
 
 class AppTheme {
@@ -73,10 +73,15 @@ class AppTheme {
     required Brightness brightness,
   }) {
     final scheme = ColorScheme(
-      primary: primary, onPrimary: onPrimary,
-      secondary: primary, surface: card, onSurface: text,
-      error: AppColors.danger, onError: Colors.white,
       brightness: brightness,
+      primary: primary,
+      onPrimary: onPrimary,
+      secondary: primary,
+      onSecondary: Colors.white,
+      surface: card,
+      onSurface: text,
+      error: AppColors.danger,
+      onError: Colors.white,
     );
 
     return ThemeData(
