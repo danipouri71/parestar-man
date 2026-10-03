@@ -1,13 +1,15 @@
-// پرستار من — تکه ۱۰: خانه (نسخه ۳ — سوییچ واقعی حالت شب در پروفایل)
+// پرستار من — تکه ۱۰: خانه (نسخه ۴ — سوییچ حالت شب از طریق app_root.dart)
 
 import 'package:flutter/material.dart';
 import '../api_client.dart';
+import '../app_root.dart';
 import '../theme.dart';
 import 'history_screen.dart';
 import 'login_screen.dart';
 import 'order_wizard.dart';
 import 'track_screen.dart';
 
+/// نگهدارنده ApiClient — هنگام ورود ساخته و به تب‌ها پاس داده می‌شود
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.api});
   final ApiClient api;
@@ -199,7 +201,7 @@ class _ProfileTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final app = ParestarManApp.of(context);
-    final currentMode = app._mode;
+    final currentMode = app.state._mode;
 
     Widget item(IconData ic, String title, {VoidCallback? onTap}) => Card(
       child: ListTile(leading: Icon(ic, color: AppColors.teal),
@@ -233,7 +235,7 @@ class _ProfileTab extends StatelessWidget {
               currentMode == ThemeMode.light ? 'light'
               : currentMode == ThemeMode.dark ? 'dark' : 'system',
             },
-            onSelectionChanged: (s) => app.setMode(s.first),
+            onSelectionChanged: (s) => app.state.setMode(s.first),
           ),
         ]))),
 
