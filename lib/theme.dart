@@ -40,6 +40,10 @@ class AppColors {
   static Color amountOf(BuildContext c) =>
       Theme.of(c).brightness == Brightness.dark ? tealNight : teal;
 
+  /// رنگ سطح کارت — context-محور
+  static Color cardOf(BuildContext c) =>
+      Theme.of(c).brightness == Brightness.dark ? cardDark : cardLight;
+
   /// رنگ خط جداکننده — context-محور
   static Color lineOf(BuildContext c) =>
       Theme.of(c).brightness == Brightness.dark ? lineDark : lineLight;

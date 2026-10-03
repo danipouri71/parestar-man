@@ -201,7 +201,7 @@ class _ProfileTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final app = ParestarManApp.of(context);
-    final currentMode = app.state._mode;
+    final currentMode = app.mode;
 
     Widget item(IconData ic, String title, {VoidCallback? onTap}) => Card(
       child: ListTile(leading: Icon(ic, color: AppColors.teal),
@@ -235,7 +235,7 @@ class _ProfileTab extends StatelessWidget {
               currentMode == ThemeMode.light ? 'light'
               : currentMode == ThemeMode.dark ? 'dark' : 'system',
             },
-            onSelectionChanged: (s) => app.state.setMode(s.first),
+            onSelectionChanged: (s) => app.setMode(s.first),
           ),
         ]))),
 

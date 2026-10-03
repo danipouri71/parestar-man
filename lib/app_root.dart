@@ -31,6 +31,8 @@ class ParestarManAppState extends State<ParestarManApp> {
     };
   }
 
+  ThemeMode get mode => _mode;
+
   void setMode(String m) {
     setState(() {
       _mode = switch (m) {
