@@ -1,4 +1,4 @@
-// پرستار من — تکه ۱۰: تاریخچه و جزئیات — وایرفریم‌های U13/U14 (نسخه هم‌خوان)
+// پرستار من — تکه ۱۰: تاریخچه و جزئیات — U13/U14 (نسخه شمسی)
 
 import 'package:flutter/material.dart';
 import '../api_client.dart';
@@ -84,7 +84,7 @@ class _HistoryScreenState extends State<HistoryScreen> {
                                   color: _badgeColor(s)))),
                       ]),
                       subtitle: Padding(padding: const EdgeInsets.only(top: 4),
-                        child: Text('${o['created_at_label'] ?? ''}'
+                        child: Text('${jalaliLabel(o['created_at']?.toString())}'
                             '${o['nurse_name'] != null ? ' — ${o['nurse_name']}' : ''}',
                             style: const TextStyle(fontSize: 11))),
                       trailing: o['total'] != null
