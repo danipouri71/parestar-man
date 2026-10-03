@@ -1,17 +1,53 @@
-// پرستار من — تکه ۸: نقطه شروع اپ
-// تصمیم ۳۰: حالت شب سه‌حالته — پیش‌فرض «خودکار» یعنی ThemeMode.system
-// (در تکه تنظیمات پروفایل، کاربر می‌تواند روشن/شب/خودکار را انتخاب کند)
+// پرستار من — نقطه شروع اپ (نسخه ۲ — حالت شب قابل انتخاب از پروفایل + ذخیره انتخاب)
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'theme.dart';
 import 'api_client.dart';
 import 'screens/login_screen.dart';
 
-void main() => runApp(const ParestarManApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
+  final saved = prefs.getString('theme_mode') ?? 'system';
+  runApp(ParestarManApp(initialMode: saved));
+}
 
-class ParestarManApp extends StatelessWidget {
-  const ParestarManApp({super.key});
+class ParestarManApp extends StatefulWidget {
+  const ParestarManApp({super.key, required this.initialMode});
+  final String initialMode;
+
+  static _ParestarManAppState of(BuildContext context) =>
+      context.findAncestorStateOfType<_ParestarManAppState>()!;
+
+  @override
+  State<ParestarManApp> createState() => _ParestarManAppState();
+}
+
+class _ParestarManAppState extends State<ParestarManApp> {
+  late ThemeMode _mode;
+
+  @override
+  void initState() {
+    super.initState();
+    _mode = switch (widget.initialMode) {
+      'light' => ThemeMode.light,
+      'dark' => ThemeMode.dark,
+      _ => ThemeMode.system,
+    };
+  }
+
+  void setMode(String m) {
+    setState(() {
+      _mode = switch (m) {
+        'light' => ThemeMode.light,
+        'dark' => ThemeMode.dark,
+        _ => ThemeMode.system,
+      };
+    });
+    SharedPreferences.getInstance().then((p) => p.setString('theme_mode', m));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,8 +56,8 @@ class ParestarManApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-      themeMode: ThemeMode.system, // تصمیم ۳۰
-      locale: const Locale('fa'),  // تصمیم ۱۳: MVP فقط فارسی
+      themeMode: _mode,
+      locale: const Locale('fa'),
       supportedLocales: const [Locale('fa')],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,

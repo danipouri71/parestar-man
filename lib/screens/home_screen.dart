@@ -1,4 +1,4 @@
-// پرستار من — تکه ۱۰: خانه نسخه ۲ — وایرفریم U1 با نوار پایین کامل
+// پرستار من — تکه ۱۰: خانه (نسخه ۳ — سوییچ واقعی حالت شب در پروفایل)
 
 import 'package:flutter/material.dart';
 import '../api_client.dart';
@@ -8,7 +8,6 @@ import 'login_screen.dart';
 import 'order_wizard.dart';
 import 'track_screen.dart';
 
-/// نگهدارنده ApiClient — هنگام ورود ساخته و به تب‌ها پاس داده می‌شود
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.api});
   final ApiClient api;
@@ -191,7 +190,7 @@ class _NotificationsTabState extends State<_NotificationsTab> {
   }
 }
 
-/* ═══════════ تب پروفایل — P1 (نسخه پخت MVP) ═══════════ */
+/* ═══════════ تب پروفایل — سوییچ سه‌حالته واقعی (تصمیم ۳۰) ═══════════ */
 
 class _ProfileTab extends StatelessWidget {
   const _ProfileTab({required this.api});
@@ -199,18 +198,45 @@ class _ProfileTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final app = ParestarManApp.of(context);
+    final currentMode = app._mode;
+
     Widget item(IconData ic, String title, {VoidCallback? onTap}) => Card(
       child: ListTile(leading: Icon(ic, color: AppColors.teal),
         title: Text(title, style: const TextStyle(fontSize: 13)),
         trailing: const Icon(Icons.chevron_left, size: 18, color: AppColors.subLight),
         onTap: onTap));
+
     return Scaffold(appBar: AppBar(backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Colors.white, title: const Text('پروفایل من', style: TextStyle(fontSize: 15))),
       body: ListView(padding: const EdgeInsets.all(12), children: [
         item(Icons.location_on_outlined, 'آدرس‌های من'),
         item(Icons.credit_card_outlined, 'روش‌های پرداخت'),
         item(Icons.family_restroom, 'اطلاعات بیماران خانواده'),
-        item(Icons.dark_mode_outlined, 'ظاهر برنامه: خودکار (روشن / شب / خودکار)'),
+
+        // ظاهر برنامه — سه انتخاب واقعی
+        Card(child: Padding(padding: const EdgeInsets.all(12), child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            const Icon(Icons.dark_mode_outlined, color: AppColors.teal, size: 20),
+            const SizedBox(width: 8),
+            Text('ظاهر برنامه', style: const TextStyle(fontSize: 13)),
+          ]),
+          const SizedBox(height: 10),
+          SegmentedButton<String>(
+            segments: const [
+              ButtonSegment(value: 'system', icon: Icon(Icons.settings_suggest_outlined), label: Text('خودکار')),
+              ButtonSegment(value: 'light', icon: Icon(Icons.light_mode_outlined), label: Text('روشن')),
+              ButtonSegment(value: 'dark', icon: Icon(Icons.dark_mode), label: Text('شب')),
+            ],
+            selected: {
+              currentMode == ThemeMode.light ? 'light'
+              : currentMode == ThemeMode.dark ? 'dark' : 'system',
+            },
+            onSelectionChanged: (s) => app.setMode(s.first),
+          ),
+        ]))),
+
         item(Icons.support_agent, 'پشتیبانی و شکایات'),
         item(Icons.description_outlined, 'قوانین و مقررات'),
         const SizedBox(height: 12),
@@ -219,9 +245,6 @@ class _ProfileTab extends StatelessWidget {
           Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(builder: (_) => LoginScreen(api: api)), (_) => false);
         }, icon: const Icon(Icons.logout), label: const Text('خروج از حساب')),
-        const SizedBox(height: 8),
-        const Center(child: Text('صفحات آدرس‌ها، بیماران و پشتیبانی در تکه‌های بعدی تکمیل می‌شوند',
-            style: TextStyle(fontSize: 10.5, color: AppColors.subLight))),
       ]),
     );
   }

@@ -1,10 +1,9 @@
-// پرستار من — تکه ۸: تم اپ — عیناً از سند هویت بصری (مرحله ۴)
-// تصمیم ۲۸: پالت تیل | تصمیم ۲۹: وزیرمتن | تصمیم ۳۰: حالت شب | تصمیم ۳۱: لمس ۴۸px
+// پرستار من — تم اپ (نسخه ۲ — مبالغ همیشه‌خوانا در هر دو حالت)
 
 import 'package:flutter/material.dart';
 
 class AppColors {
-  // روز — سند هویت بصری بخش ۱
+  // روز
   static const teal      = Color(0xFF0D9488);
   static const tealDark  = Color(0xFF0B7268);
   static const tealSoft  = Color(0xFFE5F6F4);
@@ -14,7 +13,7 @@ class AppColors {
   static const subLight  = Color(0xFF5D7A76);
   static const lineLight = Color(0xFFD8ECE9);
 
-  // شب — سند هویت بصری بخش ۲ (سیاه خالص ممنوع — همه تیره‌ها ته‌مایه سبز دارند)
+  // شب — ته‌مایه سبز، بدون سیاه خالص
   static const bgDark    = Color(0xFF0B1615);
   static const cardDark  = Color(0xFF132725);
   static const tealNight = Color(0xFF2DD4BF);
@@ -23,11 +22,19 @@ class AppColors {
   static const subDark   = Color(0xFF86A8A3);
   static const lineDark  = Color(0xFF1F3D3A);
 
-  // رنگ‌های معنایی — بخش ۳ سند
+  // معنایی
   static const success   = Color(0xFF0F9D6A);
   static const warning   = Color(0xFFB45309);
   static const danger    = Color(0xFFDC2626);
   static const info      = Color(0xFF1D6FB8);
+
+  /// رنگ متن اصلی — بر اساس روشن/تیره زمینه (برای قیمت‌ها و مبالغ)
+  static Color textOf(BuildContext c) =>
+      Theme.of(c).brightness == Brightness.dark ? textDark : textLight;
+
+  /// رنگ مبلغ — همیشه پررنگ و خوانا در هر دو حالت
+  static Color amountOf(BuildContext c) =>
+      Theme.of(c).brightness == Brightness.dark ? tealNight : teal;
 }
 
 class AppTheme {
@@ -50,10 +57,12 @@ class AppTheme {
     required Color onPrimary, required Color text, required Color sub,
     required Color line, required Color soft,
   }) {
+    final isDark = bg == AppColors.bgDark;
     final scheme = ColorScheme.light(
       primary: primary, onPrimary: onPrimary,
       secondary: primary, surface: card, onSurface: text,
       error: AppColors.danger, onError: Colors.white,
+      brightness: isDark ? Brightness.dark : Brightness.light,
     );
 
     return ThemeData(
@@ -61,11 +70,10 @@ class AppTheme {
       colorScheme: scheme,
       scaffoldBackgroundColor: bg,
       fontFamily: 'Vazirmatn',
-      // تصمیم ۳۱: هدف لمس حداقل ۴۸ پیکسل — مناسب سالمندان
       materialTapTargetSize: MaterialTapTargetSize.padded,
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: primary, foregroundColor: onPrimary,
+          backgroundColor: AppColors.teal, foregroundColor: Colors.white,
           minimumSize: const Size.fromHeight(48),
           textStyle: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -105,10 +113,10 @@ class AppTheme {
         ),
       ),
       textTheme: TextTheme(
-        titleLarge:   TextStyle(color: text, fontSize: 20, fontWeight: FontWeight.bold), // عنوان صفحه
-        titleMedium:  TextStyle(color: text, fontSize: 15, fontWeight: FontWeight.bold), // عنوان کارت
-        bodyMedium:   TextStyle(color: text, fontSize: 13),                              // متن اصلی
-        bodySmall:    TextStyle(color: sub,  fontSize: 11.5),                            // توضیح کمکی
+        titleLarge:   TextStyle(color: text, fontSize: 20, fontWeight: FontWeight.bold),
+        titleMedium:  TextStyle(color: text, fontSize: 15, fontWeight: FontWeight.bold),
+        bodyMedium:   TextStyle(color: text, fontSize: 13),
+        bodySmall:    TextStyle(color: sub,  fontSize: 11.5),
       ),
     );
   }
