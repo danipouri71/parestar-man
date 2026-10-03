@@ -1,4 +1,4 @@
-// پرستار من — تم اپ (نسخه ۲ — مبالغ همیشه‌خوانا در هر دو حالت)
+// پرستار من — تم اپ (نسخه ۳ — توابع رنگ context-محور برای مبالغ همیشه‌خوانا)
 
 import 'package:flutter/material.dart';
 
@@ -28,13 +28,21 @@ class AppColors {
   static const danger    = Color(0xFFDC2626);
   static const info      = Color(0xFF1D6FB8);
 
-  /// رنگ متن اصلی — بر اساس روشن/تیره زمینه (برای قیمت‌ها و مبالغ)
+  /// رنگ متن اصلی — بر اساس تم فعلی (برای هر متن ثابت که در هر دو حالت نمایش داده می‌شود)
   static Color textOf(BuildContext c) =>
       Theme.of(c).brightness == Brightness.dark ? textDark : textLight;
 
-  /// رنگ مبلغ — همیشه پررنگ و خوانا در هر دو حالت
+  /// رنگ متن کم‌رنگ — context-محور
+  static Color subOf(BuildContext c) =>
+      Theme.of(c).brightness == Brightness.dark ? subDark : subLight;
+
+  /// رنگ مبلغ — همیشه پررنگ و کاملاً خوانا در هر دو حالت (قاعده: مبالغ هرگز کم‌رنگ!)
   static Color amountOf(BuildContext c) =>
       Theme.of(c).brightness == Brightness.dark ? tealNight : teal;
+
+  /// رنگ خط جداکننده — context-محور
+  static Color lineOf(BuildContext c) =>
+      Theme.of(c).brightness == Brightness.dark ? lineDark : lineLight;
 }
 
 class AppTheme {
@@ -43,6 +51,7 @@ class AppTheme {
     primary: AppColors.teal, onPrimary: Colors.white,
     text: AppColors.textLight, sub: AppColors.subLight,
     line: AppColors.lineLight, soft: AppColors.tealSoft,
+    brightness: Brightness.light,
   );
 
   static ThemeData dark() => _build(
@@ -50,19 +59,20 @@ class AppTheme {
     primary: AppColors.tealNight, onPrimary: AppColors.bgDark,
     text: AppColors.textDark, sub: AppColors.subDark,
     line: AppColors.lineDark, soft: AppColors.softDark,
+    brightness: Brightness.dark,
   );
 
   static ThemeData _build({
     required Color bg, required Color card, required Color primary,
     required Color onPrimary, required Color text, required Color sub,
     required Color line, required Color soft,
+    required Brightness brightness,
   }) {
-    final isDark = bg == AppColors.bgDark;
-    final scheme = ColorScheme.light(
+    final scheme = ColorScheme(
       primary: primary, onPrimary: onPrimary,
       secondary: primary, surface: card, onSurface: text,
       error: AppColors.danger, onError: Colors.white,
-      brightness: isDark ? Brightness.dark : Brightness.light,
+      brightness: brightness,
     );
 
     return ThemeData(

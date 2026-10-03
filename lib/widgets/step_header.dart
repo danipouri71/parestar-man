@@ -1,11 +1,11 @@
-// پرستار من — تکه ۹: نوار پیشرفت «گام X از ۵» — مطابق وایرفریم‌های U2-U6
+// پرستار من — نوار پیشرفت گام‌ها (نسخه ۲ — همیشه‌خوانا در حالت شب)
 
 import 'package:flutter/material.dart';
 import '../theme.dart';
 
 class StepHeader extends StatelessWidget {
   const StepHeader({super.key, required this.step});
-  final int step; // 1..5
+  final int step;
 
   static const _labels = ['خدمت', 'آدرس', 'بیمار', 'زمان', 'تایید'];
 
@@ -19,7 +19,7 @@ class StepHeader extends StatelessWidget {
             height: 4,
             margin: EdgeInsets.only(right: i == 4 ? 0 : 4),
             decoration: BoxDecoration(
-              color: on ? AppColors.teal : AppColors.lineLight,
+              color: on ? AppColors.teal : AppColors.lineOf(context),
               borderRadius: BorderRadius.circular(2),
             ),
           ),
@@ -27,7 +27,7 @@ class StepHeader extends StatelessWidget {
       })),
       const SizedBox(height: 8),
       Text('گام $step از ۵ — ${_labels[step - 1]}',
-          style: Theme.of(context).textTheme.bodySmall),
+          style: TextStyle(fontSize: 10, color: AppColors.subOf(context))),
     ]);
   }
 }

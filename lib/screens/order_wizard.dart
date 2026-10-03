@@ -1,6 +1,4 @@
-// پرستار من — تکه ۹: جریان ثبت سفارش — وایرفریم‌های U2 تا U6
-// همه قیمت‌ها از سرور (قاعده ۱) · فوریت حداقل ۱۰۰ هزار (تصمیم ۵)
-// تاریخ شمسی (تصمیم ۴۳) · نسخه اختیاری (تصمیم ۲ و ۱۹)
+// پرستار من — تکه ۹: جریان ثبت سفارش (نسخه ۲ — رنگ‌های همیشه‌خوانا در حالت شب)
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -12,7 +10,7 @@ import '../theme.dart';
 import '../widgets/step_header.dart';
 import 'waiting_screen.dart';
 
-/* ═══════════════ قالب مشترک گام‌ها ═══════════════ */
+/* ═══════════ قالب مشترک گام‌ها ═══════════ */
 
 class _Shell extends StatelessWidget {
   const _Shell({required this.title, required this.step, required this.children});
@@ -40,36 +38,67 @@ class _Shell extends StatelessWidget {
   }
 }
 
-Widget _infoBox(String text) => Container(
+Widget _infoBox(BuildContext context, String text) => Container(
   padding: const EdgeInsets.all(12),
   decoration: BoxDecoration(
-    color: const Color(0xFFE8F2FC),
+    color: Theme.of(context).brightness == Brightness.dark
+        ? const Color(0xFF0E2233)
+        : const Color(0xFFE8F2FC),
     borderRadius: BorderRadius.circular(10),
-    border: Border.all(color: const Color(0xFFBFDBFE)),
+    border: Border.all(
+        color: Theme.of(context).brightness == Brightness.dark
+            ? const Color(0xFF1D4ED8)
+            : const Color(0xFFBFDBFE)),
   ),
-  child: Text(text, style: const TextStyle(fontSize: 11.5, color: Color(0xFF1E40AF), height: 1.9)),
+  child: Text(text,
+      style: TextStyle(
+          fontSize: 11.5,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? const Color(0xFF93C5FD)
+              : const Color(0xFF1E40AF),
+          height: 1.9)),
 );
 
-Widget _priceBox(Map<String, dynamic>? q, {int urgency = 0, String? tipLabel}) {
+Widget _priceBox(BuildContext context, Map<String, dynamic>? q,
+    {int urgency = 0}) {
   final base = q == null ? 0 : (q['base_price'] as num).toInt();
   final travel = q == null ? 0 : (q['travel_fee'] as num).toInt();
   final total = base + travel + urgency;
+  final isDark = Theme.of(context).brightness == Brightness.dark;
+
   Row row(String l, String v, {bool bold = false}) => Row(
     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-    children: [Text(l, style: TextStyle(fontSize: 12.5, fontWeight: bold ? FontWeight.bold : FontWeight.normal)),
-      Text(v, style: TextStyle(fontSize: 12.5, fontWeight: bold ? FontWeight.bold : FontWeight.normal))],
+    children: [
+      Text(l,
+          style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: bold ? FontWeight.bold : FontWeight.normal,
+              color: AppColors.textOf(context))),
+      Text(v,
+          style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.bold,
+              color: AppColors.amountOf(context))),
+    ],
   );
+
   return Container(
     padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: AppColors.lineLight)),
+    decoration: BoxDecoration(
+        color: AppColors.cardOf(context),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.lineOf(context))),
     child: Column(children: [
       row('قیمت مبنا', base == 0 ? '—' : '${_money(base)} تومان'),
       const SizedBox(height: 6),
       row('رفت‌وآمد', travel == 0 ? '—' : '${_money(travel)} تومان'),
-      if (urgency > 0) ...[const SizedBox(height: 6), row('افزایش فوریت', '+ ${_money(urgency)} تومان')],
-      const Divider(height: 18),
-      row('جمع', '$total تومان', bold: true),
+      if (urgency > 0) ...[
+        const SizedBox(height: 6),
+        row('افزایش فوریت', '+ ${_money(urgency)} تومان'),
+      ],
+      Divider(height: 18, color: AppColors.lineOf(context)),
+      row('جمع', '${_money(total)} تومان', bold: true),
+      if (isDark) const SizedBox(height: 2),
     ]),
   );
 }
@@ -89,7 +118,7 @@ void _snack(BuildContext c, String m) => ScaffoldMessenger.of(c).showSnackBar(
     SnackBar(content: Text(m, style: const TextStyle(fontSize: 13)),
         backgroundColor: AppColors.danger, behavior: SnackBarBehavior.floating));
 
-/* ═══════════════ گام ۱ — U2 جزئیات خدمت ═══════════════ */
+/* ═══════════ گام ۱ — U2 جزئیات خدمت ═══════════ */
 
 class ServiceDetailScreen extends StatefulWidget {
   const ServiceDetailScreen({super.key, required this.api, required this.service});
@@ -169,7 +198,7 @@ class _U2State extends State<ServiceDetailScreen> {
           )),
           if (_d.careShift!.startsWith('hourly')) ...[
             Row(children: [
-              const Text('تعداد ساعت:', style: TextStyle(fontSize: 13)),
+              Text('تعداد ساعت:', style: TextStyle(fontSize: 13, color: AppColors.textOf(context))),
               const Spacer(),
               IconButton(onPressed: _d.careHours > 1
                   ? () { setState(() => _d.careHours--); _loadQuote(); } : null,
@@ -191,7 +220,7 @@ class _U2State extends State<ServiceDetailScreen> {
         ],
 
         if (needsRx) ...[
-          _infoBox('ℹ️ این خدمت نیازمند دستور پزشک است. عکس نسخه یا کد رهگیری را اختیاری بارگذاری کنید؛ '
+          _infoBox(context, 'ℹ️ این خدمت نیازمند دستور پزشک است. عکس نسخه یا کد رهگیری را اختیاری بارگذاری کنید؛ '
               'پرستار پس از حضور در محل، دستور پزشک را بررسی و تایید می‌کند.'),
           const SizedBox(height: 10),
           OutlinedButton.icon(
@@ -208,10 +237,10 @@ class _U2State extends State<ServiceDetailScreen> {
           const SizedBox(height: 12),
         ],
 
-        if (_err != null) _infoBox('⚠️ $_err'),
+        if (_err != null) _infoBox(context, '⚠️ $_err'),
         _loading
             ? const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator()))
-            : _priceBox({'base_price': _d.basePrice, 'travel_fee': _d.travelFee}),
+            : _priceBox(context, {'base_price': _d.basePrice, 'travel_fee': _d.travelFee}),
         const SizedBox(height: 16),
         FilledButton(
           onPressed: _loading ? null : () => Navigator.of(context).push(MaterialPageRoute(
@@ -223,7 +252,7 @@ class _U2State extends State<ServiceDetailScreen> {
   }
 }
 
-/* ═══════════════ گام ۲ — U3 آدرس و لوکیشن ═══════════════ */
+/* ═══════════ گام ۲ — U3 آدرس و لوکیشن ═══════════ */
 
 class AddressScreen extends StatefulWidget {
   const AddressScreen({super.key, required this.api, required this.draft});
@@ -272,7 +301,7 @@ class _U3State extends State<AddressScreen> {
     widget.draft
       ..lat = (r['lat'] as num).toDouble()
       ..lng = (r['lng'] as num).toDouble()
-      ..cityId = null; // سرور از مختصات شهر را تعیین می‌کند (تصمیم ۳۷)
+      ..cityId = null;
     setState(() {});
   }
 
@@ -305,17 +334,18 @@ class _U3State extends State<AddressScreen> {
       children: [
         OutlinedButton.icon(onPressed: _openMap, icon: const Icon(Icons.map_outlined),
           label: const Text('🎯 انتخاب موقعیت روی نقشه')),
-        if (d.lat != null && !_fromMap == false && _selectedId == null)
+        if (d.lat != null && _selectedId == null)
           Padding(padding: const EdgeInsets.only(top: 6),
             child: Text('📍 موقعیت انتخاب شد: ${d.lat!.toStringAsFixed(4)} , ${d.lng!.toStringAsFixed(4)}',
-              style: Theme.of(context).textTheme.bodySmall)),
+              style: TextStyle(fontSize: 11, color: AppColors.subOf(context)))),
         const SizedBox(height: 10),
         TextField(controller: _addr, maxLines: 2,
           decoration: const InputDecoration(hintText: 'نشانی کامل — نمونه: سردشت، خیابان آزادی، پلاک ۱۲')),
         const SizedBox(height: 8),
         CheckboxListTile(value: d.saveAddress, dense: true,
           onChanged: (v) => setState(() => d.saveAddress = v ?? false),
-          title: const Text('ذخیره این آدرس برای دفعه‌های بعد', style: TextStyle(fontSize: 12.5))),
+          title: Text('ذخیره این آدرس برای دفعه‌های بعد',
+              style: TextStyle(fontSize: 12.5, color: AppColors.textOf(context)))),
 
         if (_saved.isNotEmpty) ...[
           const SizedBox(height: 12),
@@ -325,7 +355,8 @@ class _U3State extends State<AddressScreen> {
             leading: Icon(_selectedId == (a['id'] as num).toInt()
                 ? Icons.radio_button_checked : Icons.radio_button_off,
                 color: AppColors.teal),
-            title: Text((a['title'] ?? 'آدرس').toString(), style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+            title: Text((a['title'] ?? 'آدرس').toString(),
+                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
             subtitle: Text((a['full_address'] ?? '').toString(),
                 style: const TextStyle(fontSize: 11), maxLines: 2),
             onTap: () => _pick(a as Map<String, dynamic>)))),
@@ -353,7 +384,7 @@ class _MapPlaceholderState extends State<_MapPlaceholder> {
     return Directionality(textDirection: TextDirection.rtl, child: Scaffold(
       appBar: AppBar(title: const Text('انتخاب موقعیت', style: TextStyle(fontSize: 15))),
       body: ListView(padding: const EdgeInsets.all(16), children: [
-        _infoBox('🗺️ این صفحه جای اتصال نقشه نشان است و در نسخه نهایی توسط تیم توسعه با پلاگین نقشه جایگزین می‌شود. '
+        _infoBox(context, '🗺️ این صفحه جای اتصال نقشه نشان است و در نسخه نهایی توسط تیم توسعه با پلاگین نقشه جایگزین می‌شود. '
             'فعلاً مختصات را دستی وارد یا پیش‌فرض سردشت را تایید کنید.'),
         const SizedBox(height: 12),
         TextField(controller: _lat, keyboardType: TextInputType.number,
@@ -370,7 +401,7 @@ class _MapPlaceholderState extends State<_MapPlaceholder> {
   }
 }
 
-/* ═══════════════ گام ۳ — U4 اطلاعات بیمار ═══════════════ */
+/* ═══════════ گام ۳ — U4 اطلاعات بیمار ═══════════ */
 
 class PatientScreen extends StatefulWidget {
   const PatientScreen({super.key, required this.api, required this.draft});
@@ -441,7 +472,7 @@ class _U4State extends State<PatientScreen> {
         TextField(controller: _note, maxLines: 2,
           decoration: const InputDecoration(hintText: 'یادداشت برای پرستار (اختیاری)')),
         const SizedBox(height: 12),
-        _infoBox('🔒 این اطلاعات فقط برای پرستارِ همین سفارش نمایش داده می‌شود.'),
+        _infoBox(context, '🔒 این اطلاعات فقط برای پرستارِ همین سفارش نمایش داده می‌شود.'),
         const SizedBox(height: 16),
         FilledButton(onPressed: _continue, child: const Text('ادامه')),
       ],
@@ -449,7 +480,7 @@ class _U4State extends State<PatientScreen> {
   }
 }
 
-/* ═══════════════ گام ۴ — U5 زمان و فوریت ═══════════════ */
+/* ═══════════ گام ۴ — U5 زمان و فوریت ═══════════ */
 
 class TimeUrgencyScreen extends StatefulWidget {
   const TimeUrgencyScreen({super.key, required this.api, required this.draft});
@@ -559,7 +590,7 @@ class _U5State extends State<TimeUrgencyScreen> {
             onSelected: (_) => _customUrgency(), selectedColor: AppColors.tealSoft),
         ]),
         const SizedBox(height: 14),
-        _priceBox({'base_price': d.basePrice, 'travel_fee': d.travelFee}, urgency: _urgency),
+        _priceBox(context, {'base_price': d.basePrice, 'travel_fee': d.travelFee}, urgency: _urgency),
         const SizedBox(height: 16),
         FilledButton(onPressed: _continue, child: const Text('ادامه')),
       ],
@@ -567,7 +598,7 @@ class _U5State extends State<TimeUrgencyScreen> {
   }
 }
 
-/* ═══════════════ گام ۵ — U6 تایید نهایی ═══════════════ */
+/* ═══════════ گام ۵ — U6 تایید نهایی ═══════════ */
 
 class ReviewScreen extends StatefulWidget {
   const ReviewScreen({super.key, required this.api, required this.draft});
@@ -593,14 +624,15 @@ class _U6State extends State<ReviewScreen> {
     }
   }
 
-  Row _row(String l, String v, {bool bold = false}) => Row(
+  Row _row(BuildContext c, String l, String v, {bool bold = false}) => Row(
     mainAxisAlignment: MainAxisAlignment.spaceBetween,
     crossAxisAlignment: CrossAxisAlignment.start,
     children: [
-      Text(l, style: const TextStyle(fontSize: 12.5, color: AppColors.subLight)),
+      Text(l, style: TextStyle(fontSize: 12.5, color: AppColors.subOf(c))),
       const SizedBox(width: 16),
       Expanded(child: Text(v, textAlign: TextAlign.left,
-          style: TextStyle(fontSize: 12.5, fontWeight: bold ? FontWeight.bold : FontWeight.normal))),
+          style: TextStyle(fontSize: 12.5, color: AppColors.textOf(c),
+              fontWeight: bold ? FontWeight.bold : FontWeight.normal))),
     ]);
 
   Future<void> _submit() async {
@@ -631,24 +663,24 @@ class _U6State extends State<ReviewScreen> {
       title: 'تایید نهایی', step: 5,
       children: [
         Card(child: Padding(padding: const EdgeInsets.all(14), child: Column(children: [
-          _row('خدمت', '${d.serviceIcon} ${d.serviceName}'),
+          _row(context, 'خدمت', '${d.serviceIcon} ${d.serviceName}'),
           const Divider(height: 16),
-          _row('بیمار', d.patientId != null ? 'پروفایل ذخیره‌شده ✓' : d.patientName),
+          _row(context, 'بیمار', d.patientId != null ? 'پروفایل ذخیره‌شده ✓' : d.patientName),
           const Divider(height: 16),
-          _row('آدرس', d.addressText ?? '—', bold: false),
+          _row(context, 'آدرس', d.addressText ?? '—'),
           const Divider(height: 16),
-          _row('زمان', d.immediate ? '⚡ همین حالا' : (_schedLabel ?? '—')),
+          _row(context, 'زمان', d.immediate ? '⚡ همین حالا' : (_schedLabel ?? '—')),
           const Divider(height: 16),
-          _row('نسخه', d.prescriptionPath != null
+          _row(context, 'نسخه', d.prescriptionPath != null
               ? 'آپلود شد ✓' : (d.rxTrackingCode?.isNotEmpty == true ? 'کد رهگیری ثبت شد ✓' : '—')),
           const Divider(height: 16),
-          _row('قیمت مبنا', '${_money(d.basePrice)} تومان'),
+          _row(context, 'قیمت مبنا', '${_money(d.basePrice)} تومان'),
           const SizedBox(height: 6),
-          _row('رفت‌وآمد', '${_money(d.travelFee)} تومان'),
+          _row(context, 'رفت‌وآمد', '${_money(d.travelFee)} تومان'),
           const SizedBox(height: 6),
-          _row('فوریت', d.urgency > 0 ? '+ ${_money(d.urgency)} تومان' : '—'),
+          _row(context, 'فوریت', d.urgency > 0 ? '+ ${_money(d.urgency)} تومان' : '—'),
           const Divider(height: 16),
-          _row('جمع', '${_money(d.basePrice + d.travelFee + d.urgency)} تومان', bold: true),
+          _row(context, 'جمع', '${_money(d.basePrice + d.travelFee + d.urgency)} تومان', bold: true),
         ]))),
         const SizedBox(height: 8),
         Text('مبلغ نهایی پس از ثبت وسایل مصرفی توسط پرستار و پیش از پرداخت نمایش داده می‌شود.',
