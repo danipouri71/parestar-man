@@ -15,6 +15,7 @@ dependencies:
   shared_preferences: ^2.2.0  # ذخیره نشست ورود
   shamsi_date: ^1.0.4     # نمایش تاریخ شمسی (تصمیم ۴۳)
   image_picker: ^1.0.7    # انتخاب عکس نسخه از گالری (تصمیم ۲)
+  persian_datetime_picker: ^3.2.0
 
 flutter:
   uses-material-design: true
