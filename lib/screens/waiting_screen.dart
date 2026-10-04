@@ -1,4 +1,4 @@
-// پرستار من — تکه ۹: صفحه انتظار — وایرفریم U7
+// پرستار من — تکه ۹: صفحه انتظار — U7 (نسخه ۲: شمارش معکوس از deadline سرور)
 // مهلت ۱۵ دقیقه سفارش فوری (مصوب) · لغو رایگان پیش از پذیرش · polling هر ۸ ثانیه
 
 import 'dart:async';
@@ -25,6 +25,7 @@ class _WaitingState extends State<WaitingScreen> {
   int _elapsed = 0;
   String _status = 'awaiting_acceptance';
   Map<String, dynamic>? _order;
+  DateTime? _deadline;
 
   @override
   void initState() {
@@ -32,12 +33,21 @@ class _WaitingState extends State<WaitingScreen> {
     _tick = Timer.periodic(const Duration(seconds: 1),
         (_) => setState(() => _elapsed++));
     _poll = Timer.periodic(const Duration(seconds: 8), (_) => _check());
+    _load().then((_) => _initDeadline());
   }
 
   @override
   void dispose() { _tick?.cancel(); _poll?.cancel(); super.dispose(); }
 
-  Future<void> _check() async {
+  void _initDeadline() {
+    final created = _order?['created_at']?.toString() ?? '';
+    final dt = DateTime.tryParse(created);
+    if (dt != null && widget.isImmediate) {
+      _deadline = dt.add(const Duration(minutes: 15));
+    }
+  }
+
+  Future<void> _load() async {
     try {
       final o = await widget.api.orderDetails(widget.orderId);
       if (!mounted) return;
@@ -45,6 +55,8 @@ class _WaitingState extends State<WaitingScreen> {
       if (st != 'awaiting_acceptance') {
         _tick?.cancel(); _poll?.cancel();
         setState(() { _status = st; _order = o; });
+      } else if (_order == null) {
+        setState(() { _order = o; });
       }
     } on ApiException {
       /* تیک بعدی دوباره تلاش می‌کند */
@@ -75,8 +87,18 @@ class _WaitingState extends State<WaitingScreen> {
     }
   }
 
-  String get _mmss =>
-      '${(_elapsed ~/ 60).toString().padLeft(2, '0')}:${(_elapsed % 60).toString().padLeft(2, '0')}';
+  /// شمارش معکوس از deadline سرور — حتی اگر صفحه خاموش شده باشد، عدد واقعی می‌ماند
+  String get _mmss {
+    if (_deadline == null) {
+      // بدون deadline (سفارش زمان‌دار) — شمارش مدت صبر
+      return '${(_elapsed ~/ 60).toString().padLeft(2, '0')}:${(_elapsed % 60).toString().padLeft(2, '0')}';
+    }
+    final remain = _deadline!.difference(DateTime.now());
+    if (remain.isNegative) return '00:00';
+    final m = remain.inMinutes;
+    final s = remain.inSeconds % 60;
+    return '${m.toString().padLeft(2, '0')}:${s.toString().padLeft(2, '0')}';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -94,9 +116,12 @@ class _WaitingState extends State<WaitingScreen> {
               style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold))),
           const SizedBox(height: 8),
           Center(child: Text(_mmss, style: const TextStyle(
-              fontSize: 26, fontWeight: FontWeight.bold, color: AppColors.teal))),
-          const SizedBox(height: 8),
-          Center(child: Text('به‌محض پذیرش، اطلاع می‌گیرید',
+              fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.teal))),
+          const SizedBox(height: 6),
+          Center(child: Text(_deadline != null
+              ? 'مهلت پذیرش خودکار: ۱۵ دقیقه از زمان ثبت (ساعت سرور) — حتی با بستن اپ'
+              : 'به‌محض پذیرش، اطلاع می‌گیرید',
+              textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall)),
         ] else ...[
           Container(padding: const EdgeInsets.all(16),
@@ -111,9 +136,6 @@ class _WaitingState extends State<WaitingScreen> {
               if (accepted && nurseName.isNotEmpty) ...[
                 const SizedBox(height: 6),
                 Text('پرستار: $nurseName', style: const TextStyle(fontSize: 13)),
-                const SizedBox(height: 4),
-                const Text('صفحه پیگیری زنده در مرحله بعدی اضافه می‌شود',
-                    style: TextStyle(fontSize: 11, color: AppColors.subLight)),
               ],
               if (!accepted) ...[
                 const SizedBox(height: 6),
