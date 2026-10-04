@@ -60,7 +60,7 @@ Widget _priceBox(Map<String, dynamic>? q, {int urgency = 0}) {
           fontWeight: bold ? FontWeight.bold : FontWeight.normal))),
       Text(v, style: TextStyle(fontSize: 12.5,
           fontWeight: bold ? FontWeight.bold : FontWeight.normal,
-          color: bold ? AppColors.amountOf(null) : null)),
+                             color: bold ? (WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark ? AppColors.tealNight : AppColors.teal) : null)),
     ]);
   return Container(
     padding: const EdgeInsets.all(12),
