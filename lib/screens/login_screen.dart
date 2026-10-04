@@ -1,4 +1,4 @@
-// پرستار من — تکه ۸: صفحه ورود (تصمیم ۴ + تایمر ۹۰ ثانیه‌ای تصمیم ۴۱)
+// پرستار من — تکه ۸: صفحه ورود (نسخه ۲: اعتبارسنجی فارسی قبل از ارسال)
 
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -16,8 +16,8 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _mobile = TextEditingController();
-  final _code   = TextEditingController();
-  final _name   = TextEditingController();
+  final _code = TextEditingController();
+  final _name = TextEditingController();
 
   bool _codeSent = false;
   bool _busy = false;
@@ -28,41 +28,48 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() { _timer?.cancel(); super.dispose(); }
 
   void _startResendTimer() {
-    _resendIn = 90; // تصمیم ۴۱ — همان قانون سرور
+    _resendIn = 90;
     _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 1), (t) {
       if (_resendIn <= 0) { t.cancel(); } else { setState(() => _resendIn--); }
     });
   }
 
-  Future<void> _showError(Object e) async {
+  void _showError(String m) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(e.toString(), style: const TextStyle(fontSize: 13)),
+      content: Text(m, style: const TextStyle(fontSize: 13)),
       backgroundColor: AppColors.danger,
       behavior: SnackBarBehavior.floating,
     ));
   }
 
   Future<void> _sendCode() async {
+    final mobile = _mobile.text.trim();
+    if (mobile.isEmpty) { _showError('شماره موبایل را وارد کنید.'); return; }
     setState(() => _busy = true);
     try {
-      await widget.api.requestOtp(_mobile.text.trim());
-      setState(() { _codeSent = true; });
+      await widget.api.requestOtp(mobile);
+      if (!mounted) return;
+      setState(() => _codeSent = true);
       _startResendTimer();
-    } on ApiException catch (e) { _showError(e); }
-    finally { setState(() => _busy = false); }
+    } on ApiException catch (e) { _showError(e.toString()); }
+    finally { if (mounted) setState(() => _busy = false); }
   }
 
   Future<void> _verify() async {
+    final code = _code.text.trim();
+    if (code.isEmpty) { _showError('کد تایید را وارد کنید.'); return; }
+    final name = _name.text.trim();
+    if (name.isEmpty) { _showError('نام و نام خانوادگی را وارد کنید.'); return; }
     setState(() => _busy = true);
     try {
-      await widget.api.verifyOtp(_mobile.text.trim(), _code.text.trim(), _name.text.trim());
+      await widget.api.verifyOtp(_mobile.text.trim(), code, name);
       if (!mounted) return;
       Navigator.of(context).pushReplacement(MaterialPageRoute(
         builder: (_) => HomeScreen(api: widget.api),
       ));
-    } on ApiException catch (e) { _showError(e); }
-    finally { setState(() => _busy = false); }
+    } on ApiException catch (e) { _showError(e.toString()); }
+    finally { if (mounted) setState(() => _busy = false); }
   }
 
   @override
@@ -106,7 +113,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 TextField(
                   controller: _name,
                   decoration: const InputDecoration(
-                      hintText: 'نام و نام خانوادگی (فقط برای ثبت‌نام اولین بار)'),
+                    hintText: 'نام و نام خانوادگی (فقط برای ثبت‌نام اولین بار)',
+                  ),
                 ),
                 const SizedBox(height: 12),
               ],
