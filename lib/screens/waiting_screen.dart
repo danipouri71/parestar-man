@@ -21,7 +21,6 @@ class WaitingScreen extends StatefulWidget {
 
 class _WaitingState extends State<WaitingScreen> {
   Timer? _tick, _poll;
-  int _elapsed = 0;
   String _status = 'awaiting_acceptance';
   Map<String, dynamic>? _order;
   DateTime? _deadline;
@@ -30,7 +29,7 @@ class _WaitingState extends State<WaitingScreen> {
   void initState() {
     super.initState();
     _tick = Timer.periodic(const Duration(seconds: 1),
-        (_) { if (mounted) setState(() => _elapsed++); });
+        (_) { if (mounted) setState(() {}); });
     _poll = Timer.periodic(const Duration(seconds: 8), (_) => _check());
     _check().then((_) => _initDeadline());
   }
@@ -94,7 +93,7 @@ class _WaitingState extends State<WaitingScreen> {
   /// شمارش معکوس از deadline سرور — با بستن اپ هم عدد واقعی می‌ماند
   String get _mmss {
     if (_deadline == null) {
-      return '${(_elapsed ~/ 60).toString().padLeft(2, '0')}:${(_elapsed % 60).toString().padLeft(2, '0')}';
+      return '—';
     }
     final remain = _deadline!.difference(DateTime.now());
     if (remain.isNegative) return '۰۰:۰۰';
@@ -122,7 +121,7 @@ class _WaitingState extends State<WaitingScreen> {
               fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.teal))),
           const SizedBox(height: 6),
           Center(child: Text(_deadline != null
-              ? '⏳ مهلت پذیرش: ۱۵ دقیقه از زمان ثبت — حتی با بستن اپ شمارش سرور ادامه دارد'
+              ? '⏳ مهلت پذیرش: ۱۵ دقیقه از زمان ثبت — حتی با بستن اپ، شمارش سرور ادامه دارد'
               : 'به‌محض پذیرش، اطلاع می‌گیرید',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall)),
