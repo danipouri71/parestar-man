@@ -465,15 +465,10 @@ class _U5State extends State<TimeUrgencyScreen> {
     return '${j.year}/${two(j.month)}/${two(j.day)} — ${two(dt.hour)}:${two(dt.minute)}';
   }
 
-    Future<void> _pickDateTime() async {
-    Jalali? initialJ;
-    try {
-      initialJ = Jalali.fromDateTime(DateTime.now().add(const Duration(days: 1)));
-    } catch (_) {}
-
-      final jDate = await pdp.showPersianDatePicker(
+      Future<void> _pickDateTime() async {
+    final jDate = await pdp.showPersianDatePicker(
       context: context,
-      initialDate: initialJ ?? Jalali.now(),
+      initialDate: Jalali.now(),
       firstDate: Jalali.now(),
       lastDate: Jalali.now().addMonths(1),
     );
@@ -483,8 +478,10 @@ class _U5State extends State<TimeUrgencyScreen> {
         initialTime: const TimeOfDay(hour: 10, minute: 0));
     if (time == null || !mounted) return;
 
-    final gregorian = jDate.toDateTime();
-    final dt = DateTime(gregorian.year, gregorian.month, gregorian.day, time.hour, time.minute);
+    // تبدیل شمسی→میلادی و ساخت DateTime محلی (بدون خطای timezone در ساعت)
+    final greg = jDate.toDateTime();
+    final dt = DateTime(greg.year, greg.month, greg.day, time.hour, time.minute);
+
     if (dt.isBefore(DateTime.now().add(const Duration(hours: 1)))) {
       _snack(context, 'سفارش زمان‌دار باید حداقل یک ساعت آینده باشد.');
       return;
