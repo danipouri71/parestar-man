@@ -26,12 +26,16 @@ class _WaitingState extends State<WaitingScreen> {
   DateTime? _deadline;
 
   @override
-  void initState() {
-    super.initState();
-    _tick = Timer.periodic(const Duration(seconds: 1),
-        (_) { if (mounted) setState(() {}); });
-    _poll = Timer.periodic(const Duration(seconds: 8), (_) => _check());
-    _check().then((_) => _initDeadline());
+   void _initDeadline() {
+    final raw = _order?['created_at']?.toString() ?? '';
+    if (raw.isEmpty) return;
+    // MySQL فرمت "2026-10-05 12:31:24" می‌دهد — فاصله را به T تبدیل کن تا parse قطعی شود
+    final normalized = raw.replaceFirst(' ', 'T');
+    final dt = DateTime.tryParse(normalized) ?? DateTime.tryParse(raw.substring(0, 19));
+    if (dt == null) return;
+    if (widget.isImmediate) {
+      _deadline = dt.add(const Duration(minutes: 15));
+    }
   }
 
   @override
