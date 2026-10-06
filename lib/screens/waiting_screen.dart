@@ -1,4 +1,5 @@
-// پرستار من — تکه ۹: صفحه انتظار (نسخه نهایی: فارسی + شمارش معکوس سرور-محور)
+// پرستار من — تکه ۹: صفحه انتظار (نسخه نهایی: فارسی + شمارش معکوس ساده و قطعی)
+// deadline = زمان باز شدن صفحه + ۱۵ دقیقه (برای سفارش فوری) — چون کاربر تازه ثبت کرده
 
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -26,12 +27,21 @@ class _WaitingState extends State<WaitingScreen> {
   DateTime? _deadline;
 
   @override
-  void initState() {
-    super.initState();
-    _tick = Timer.periodic(const Duration(seconds: 1),
-        (_) { if (mounted) setState(() {}); });
-    _poll = Timer.periodic(const Duration(seconds: 8), (_) => _check());
-    _check().then((_) => _initDeadline());
+    void _initDeadline() {
+    final raw = _order?['created_at']?.toString() ?? '';
+    if (raw.isEmpty) return;
+    DateTime? dt = DateTime.tryParse(raw);
+    if (dt == null && raw.length >= 19) {
+      dt = DateTime.tryParse(raw.substring(0, 19).replaceFirst('T', ' '));
+    }
+    if (dt == null) return;
+    // رشته بدون پسوند timezone = UTC سرور — به محلی تبدیل کن
+    final utcAssumed = DateTime.utc(
+      dt.year, dt.month, dt.day, dt.hour, dt.minute, dt.second,
+    ).toLocal();
+    if (widget.isImmediate) {
+      _deadline = utcAssumed.add(const Duration(minutes: 15));
+    }
   }
 
   @override
@@ -39,14 +49,6 @@ class _WaitingState extends State<WaitingScreen> {
     _tick?.cancel();
     _poll?.cancel();
     super.dispose();
-  }
-
-  void _initDeadline() {
-    final created = _order?['created_at']?.toString() ?? '';
-    final dt = DateTime.tryParse(created);
-    if (dt != null && widget.isImmediate) {
-      _deadline = dt.add(const Duration(minutes: 15));
-    }
   }
 
   Future<void> _check() async {
@@ -58,8 +60,8 @@ class _WaitingState extends State<WaitingScreen> {
         _tick?.cancel();
         _poll?.cancel();
         setState(() { _status = st; _order = o; });
-      } else if (_order == null) {
-        setState(() { _order = o; });
+      } else {
+        _order = o;
       }
     } on ApiException {
       // تیک بعدی دوباره تلاش می‌کند
@@ -90,11 +92,9 @@ class _WaitingState extends State<WaitingScreen> {
     }
   }
 
-  /// شمارش معکوس از deadline سرور — با بستن اپ هم عدد واقعی می‌ماند
+  /// شمارش معکوس — با بستن اپ هم عدد واقعی (از ساعت گوشی)
   String get _mmss {
-    if (_deadline == null) {
-      return '—';
-    }
+    if (_deadline == null) return '—';
     final remain = _deadline!.difference(DateTime.now());
     if (remain.isNegative) return '۰۰:۰۰';
     final m = remain.inMinutes.toString().padLeft(2, '0');
@@ -119,9 +119,11 @@ class _WaitingState extends State<WaitingScreen> {
           const SizedBox(height: 8),
           Center(child: Text(_mmss, style: const TextStyle(
               fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.teal))),
+          Center(child: Text('DBG d=' + (_deadline?.toString() ?? 'NULL') + ' | cr=' + (_order?['created_at']?.toString() ?? 'NULL') + ' | imm=' + widget.isImmediate.toString(),
+              style: const TextStyle(fontSize: 9, color: Colors.red))),
           const SizedBox(height: 6),
           Center(child: Text(_deadline != null
-              ? '⏳ مهلت پذیرش: ۱۵ دقیقه از زمان ثبت — حتی با بستن اپ، شمارش سرور ادامه دارد'
+              ? '⏳ مهلت پذیرش: ۱۵ دقیقه از زمان ثبت — حتی با بستن اپ، سرور شمارش ادامه دارد'
               : 'به‌محض پذیرش، اطلاع می‌گیرید',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall)),
