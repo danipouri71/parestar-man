@@ -1,9 +1,8 @@
-// پرستار من — تکه ۹: جریان ثبت سفارش ۵ گامی — U2 تا U6 (نسخه ۳: تاریخ شمسی گام ۵)
+// پرستار من — تکه ۹: جریان ثبت سفارش ۵ گامی — U2 تا U6 (نسخه ۴: فوریت در گام آخر + تاریخ شمسی)
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:persian_datetime_picker/persian_datetime_picker.dart' as pdp;
 import 'package:shamsi_date/shamsi_date.dart';
 import '../api_client.dart';
 import '../models/order_draft.dart';
@@ -61,7 +60,7 @@ Widget _priceBox(Map<String, dynamic>? q, {int urgency = 0}) {
           fontWeight: bold ? FontWeight.bold : FontWeight.normal))),
       Text(v, style: TextStyle(fontSize: 12.5,
           fontWeight: bold ? FontWeight.bold : FontWeight.normal,
-                             color: bold ? (WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark ? AppColors.tealNight : AppColors.teal) : null)),
+          color: bold ? (WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark ? AppColors.tealNight : AppColors.teal) : null)),
     ]);
   return Container(
     padding: const EdgeInsets.all(12),
@@ -444,7 +443,7 @@ class _U4State extends State<PatientScreen> {
   }
 }
 
-/* ═══════════ گام ۴ — U5 زمان و فوریت ═══════════ */
+/* ═══════════ گام ۴ — U5 زمان (بدون فوریت — فوریت به گام ۵ منتقل شد) ═══════════ */
 
 class TimeUrgencyScreen extends StatefulWidget {
   const TimeUrgencyScreen({super.key, required this.api, required this.draft});
@@ -457,7 +456,6 @@ class TimeUrgencyScreen extends StatefulWidget {
 
 class _U5State extends State<TimeUrgencyScreen> {
   DateTime? _scheduled;
-  int _urgency = 0;
 
   String _jalali(DateTime dt) {
     final j = Jalali.fromDateTime(dt);
@@ -465,45 +463,20 @@ class _U5State extends State<TimeUrgencyScreen> {
     return '${j.year}/${two(j.month)}/${two(j.day)} — ${two(dt.hour)}:${two(dt.minute)}';
   }
 
-      Future<void> _pickDateTime() async {
-    final jDate = await pdp.showPersianDatePicker(
-      context: context,
-      initialDate: Jalali.now(),
-      firstDate: Jalali.now(),
-      lastDate: Jalali.now().addMonths(1),
-    );
-    if (jDate == null || !mounted) return;
-
+  Future<void> _pickDateTime() async {
+    final date = await showDatePicker(context: context,
+        initialDate: DateTime.now().add(const Duration(days: 1)),
+        firstDate: DateTime.now(), lastDate: DateTime.now().add(const Duration(days: 30)));
+    if (date == null || !mounted) return;
     final time = await showTimePicker(context: context,
         initialTime: const TimeOfDay(hour: 10, minute: 0));
     if (time == null || !mounted) return;
-
-    // تبدیل شمسی→میلادی و ساخت DateTime محلی (بدون خطای timezone در ساعت)
-    final greg = jDate.toDateTime();
-    final dt = DateTime(greg.year, greg.month, greg.day, time.hour, time.minute);
-
+    final dt = DateTime(date.year, date.month, date.day, time.hour, time.minute);
     if (dt.isBefore(DateTime.now().add(const Duration(hours: 1)))) {
       _snack(context, 'سفارش زمان‌دار باید حداقل یک ساعت آینده باشد.');
       return;
     }
     setState(() { widget.draft.immediate = false; _scheduled = dt; });
-  }
-
-  Future<void> _customUrgency() async {
-    final c = TextEditingController();
-    final v = await showDialog<int>(context: context, builder: (_) => AlertDialog(
-      title: const Text('مبلغ دلخواه فوریت', style: TextStyle(fontSize: 16)),
-      content: TextField(controller: c, keyboardType: TextInputType.number,
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-        decoration: const InputDecoration(hintText: 'حداقل ۱۰۰۰۰۰ تومان — بدون سقف')),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('انصراف')),
-        FilledButton(onPressed: () => Navigator.pop(context, int.tryParse(c.text)),
-            child: const Text('تایید')),
-      ]));
-    if (v == null) return;
-    if (v > 0 && v < 100000) { _snack(context, 'حداقل افزایش فوریت ۱۰۰,۰۰۰ تومان است.'); return; }
-    setState(() => _urgency = v);
   }
 
   void _continue() {
@@ -513,9 +486,8 @@ class _U5State extends State<TimeUrgencyScreen> {
       return;
     }
     d
-      ..immediate = d.immediate && _scheduled == null
-      ..scheduledAt = _scheduled
-      ..urgency = _urgency;
+      ..scheduledAt = d.immediate ? null : _scheduled
+      ..urgency = 0;
     Navigator.of(context).push(MaterialPageRoute(
         builder: (_) => ReviewScreen(api: widget.api, draft: d)));
   }
@@ -524,7 +496,7 @@ class _U5State extends State<TimeUrgencyScreen> {
   Widget build(BuildContext context) {
     final d = widget.draft;
     return _Shell(
-      title: 'زمان و فوریت', step: 4,
+      title: 'زمان دریافت خدمت', step: 4,
       children: [
         SegmentedButton<bool>(
           segments: const [
@@ -532,7 +504,10 @@ class _U5State extends State<TimeUrgencyScreen> {
             ButtonSegment(value: false, icon: Icon(Icons.schedule), label: Text('زمان مشخص')),
           ],
           selected: {d.immediate},
-          onSelectionChanged: (s) => setState(() => d.immediate = s.first),
+          onSelectionChanged: (s) => setState(() {
+            d.immediate = s.first;
+            if (d.immediate) _scheduled = null; // پاکسازی زمان قبلی هنگام سوییچ
+          }),
         ),
         if (!d.immediate) ...[
           const SizedBox(height: 10),
@@ -544,25 +519,7 @@ class _U5State extends State<TimeUrgencyScreen> {
             onTap: _pickDateTime)),
         ],
         const SizedBox(height: 14),
-        Text('افزایش فوریت (اختیاری — برای پذیرش سریع‌تر)',
-            style: Theme.of(context).textTheme.bodySmall),
-        const SizedBox(height: 8),
-        Wrap(spacing: 8, children: [
-          ChoiceChip(label: const Text('بدون افزایش', style: TextStyle(fontSize: 12)),
-            selected: _urgency == 0, onSelected: (_) => setState(() => _urgency = 0),
-            selectedColor: AppColors.tealSoft),
-          ChoiceChip(label: const Text('+۱۰۰ هزار', style: TextStyle(fontSize: 12)),
-            selected: _urgency == 100000, onSelected: (_) => setState(() => _urgency = 100000),
-            selectedColor: AppColors.tealSoft),
-          ChoiceChip(label: const Text('+۲۰۰ هزار', style: TextStyle(fontSize: 12)),
-            selected: _urgency == 200000, onSelected: (_) => setState(() => _urgency = 200000),
-            selectedColor: AppColors.tealSoft),
-          ChoiceChip(label: const Text('مبلغ دلخواه', style: TextStyle(fontSize: 12)),
-            selected: _urgency > 0 && _urgency != 100000 && _urgency != 200000,
-            onSelected: (_) => _customUrgency(), selectedColor: AppColors.tealSoft),
-        ]),
-        const SizedBox(height: 14),
-        _priceBox({'base_price': d.basePrice, 'travel_fee': d.travelFee}, urgency: _urgency),
+        _priceBox({'base_price': d.basePrice, 'travel_fee': d.travelFee}),
         const SizedBox(height: 16),
         FilledButton(onPressed: _continue, child: const Text('ادامه')),
       ],
@@ -570,7 +527,7 @@ class _U5State extends State<TimeUrgencyScreen> {
   }
 }
 
-/* ═══════════ گام ۵ — U6 تایید نهایی (با تاریخ شمسی) ═══════════ */
+/* ═══════════ گام ۵ — U6 تایید نهایی + فوریت (انتقال به گام آخر — درخواست مالک) ═══════════ */
 
 class ReviewScreen extends StatefulWidget {
   const ReviewScreen({super.key, required this.api, required this.draft});
@@ -584,6 +541,7 @@ class ReviewScreen extends StatefulWidget {
 class _U6State extends State<ReviewScreen> {
   bool _busy = false;
   String? _schedLabel;
+  int _urgency = 0;
 
   @override
   void initState() {
@@ -608,9 +566,30 @@ class _U6State extends State<ReviewScreen> {
           style: TextStyle(fontSize: 12.5, fontWeight: bold ? FontWeight.bold : FontWeight.normal))),
     ]);
 
+  Future<void> _customUrgency() async {
+    final c = TextEditingController();
+    final v = await showDialog<int>(context: context, builder: (_) => AlertDialog(
+      title: const Text('مبلغ دلخواه فوریت', style: TextStyle(fontSize: 16)),
+      content: TextField(controller: c, keyboardType: TextInputType.number,
+        inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+        decoration: const InputDecoration(hintText: 'حداقل ۱۰۰۰۰۰ تومان — بدون سقف')),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('انصراف')),
+        FilledButton(onPressed: () => Navigator.pop(context, int.tryParse(c.text)),
+            child: const Text('تایید')),
+      ]));
+    if (v == null) return;
+    if (v > 0 && v < 100000) {
+      _snack(context, 'حداقل افزایش فوریت ۱۰۰,۰۰۰ تومان است.');
+      return;
+    }
+    setState(() => _urgency = v);
+  }
+
   Future<void> _submit() async {
     setState(() => _busy = true);
     try {
+      widget.draft.urgency = _urgency;
       final r = await widget.api.createOrder(widget.draft.toApi(),
           prescriptionPath: widget.draft.prescriptionPath);
       if (!mounted) return;
@@ -646,15 +625,34 @@ class _U6State extends State<ReviewScreen> {
           const Divider(height: 16),
           _row('نسخه', d.prescriptionPath != null
               ? 'آپلود شد ✓' : (d.rxTrackingCode?.isNotEmpty == true ? 'کد رهگیری ثبت شد ✓' : '—')),
-          const Divider(height: 16),
-          _row('قیمت مبنا', '${money(d.basePrice)} تومان'),
-          const SizedBox(height: 6),
-          _row('رفت‌وآمد', '${money(d.travelFee)} تومان'),
-          const SizedBox(height: 6),
-          _row('فوریت', d.urgency > 0 ? '+ ${money(d.urgency)} تومان' : '—'),
-          const Divider(height: 16),
-          _row('جمع', '${money(d.basePrice + d.travelFee + d.urgency)} تومان', bold: true),
         ]))),
+        const SizedBox(height: 12),
+
+        // فوریت — انتقال یافته به گام آخر (درخواست مالک)
+        Container(padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(color: const Color(0xFFFFF8E6),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: const Color(0xFFFDBA74))),
+          child: const Text('⚡ با افزایش قیمت، احتمال پذیرش سریع‌تر بالاتر می‌رود',
+            style: TextStyle(fontSize: 12, color: Color(0xFF9A3412), height: 1.8))),
+        const SizedBox(height: 10),
+        Wrap(spacing: 8, children: [
+          ChoiceChip(label: const Text('بدون افزایش', style: TextStyle(fontSize: 12)),
+            selected: _urgency == 0, onSelected: (_) => setState(() => _urgency = 0),
+            selectedColor: AppColors.tealSoft),
+          ChoiceChip(label: const Text('+۱۰۰ هزار', style: TextStyle(fontSize: 12)),
+            selected: _urgency == 100000, onSelected: (_) => setState(() => _urgency = 100000),
+            selectedColor: AppColors.tealSoft),
+          ChoiceChip(label: const Text('+۲۰۰ هزار', style: TextStyle(fontSize: 12)),
+            selected: _urgency == 200000, onSelected: (_) => setState(() => _urgency = 200000),
+            selectedColor: AppColors.tealSoft),
+          ChoiceChip(label: Text(_urgency > 0 && _urgency != 100000 && _urgency != 200000
+              ? '${money(_urgency)} ✓' : 'مبلغ دلخواه', style: const TextStyle(fontSize: 12)),
+            selected: _urgency > 0 && _urgency != 100000 && _urgency != 200000,
+            onSelected: (_) => _customUrgency(), selectedColor: AppColors.tealSoft),
+        ]),
+        const SizedBox(height: 14),
+        _priceBox({'base_price': d.basePrice, 'travel_fee': d.travelFee}, urgency: _urgency),
         const SizedBox(height: 8),
         Text('مبلغ نهایی پس از ثبت وسایل مصرفی توسط پرستار و پیش از پرداخت نمایش داده می‌شود.',
             textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall),
