@@ -120,7 +120,11 @@ class ApiClient {
 
   Future<Map<String, dynamic>> orderDetails(int id) => _send('GET', '/orders/$id');
 
-  Future<void> cancelOrder(int id) async {
+  Future<void> cancelOrder  /// افزایش فوریت روی سفارش در انتظار — تصمیم ۴۹
+  Future<void> updateUrgency(int orderId, int amount) async {
+    await _send('POST', '/orders/$orderId/urgency',
+        body: {'urgency_amount': amount});
+  }(int id) async {
     await _send('POST', '/orders/$id/cancel');
   }
 
