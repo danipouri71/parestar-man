@@ -1,6 +1,4 @@
-// پرستار من — کلاینت API (نسخه ۵ — با پیشوند /api خودکار)
-// چون Laravel مسیرهای routes/api.php را با پیشوند /api سرو می‌کند،
-// همه مسیرها حالا از _base یعنی baseUrl/api ساخته می‌شوند.
+// پرستار من — کلاینت API (نسخه ۶: با updateUrgency)
 
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -16,7 +14,6 @@ class ApiClient {
   ApiClient({required this.baseUrl});
   final String baseUrl;
 
-  /// آدرس کامل شامل پیشوند /api — Laravel خودش این پیشوند را روی routes/api.php می‌گذارد
   String get _base => '$baseUrl/api';
 
   String? token;
@@ -47,9 +44,9 @@ class ApiClient {
     http.Response res;
     try {
       res = method == 'GET'
-          ? await http.get(uri, headers: _jsonHeaders).timeout(const Duration(seconds: 20))
+          ? await http.get(uri, headers: _jsonHeaders).timeout(const Duration(seconds: 30))
           : await http.post(uri, headers: _jsonHeaders,
-              body: jsonEncode(body ?? {})).timeout(const Duration(seconds: 20));
+              body: jsonEncode(body ?? {})).timeout(const Duration(seconds: 60));
     } catch (_) {
       throw ApiException('ارتباط با سرور برقرار نشد. اینترنت خود را بررسی کنید.');
     }
@@ -120,12 +117,12 @@ class ApiClient {
 
   Future<Map<String, dynamic>> orderDetails(int id) => _send('GET', '/orders/$id');
 
-  Future<void> cancelOrder  /// افزایش فوریت روی سفارش در انتظار — تصمیم ۴۹
-  Future<void> updateUrgency(int orderId, int amount) async {
-    await _send('POST', '/orders/$orderId/urgency',
-        body: {'urgency_amount': amount});
-  }(int id) async {
+  Future<void> cancelOrder(int id) async {
     await _send('POST', '/orders/$id/cancel');
+  }
+
+  Future<void> updateUrgency(int orderId, int amount) async {
+    await _send('POST', '/orders/$orderId/urgency', body: {'urgency_amount': amount});
   }
 
   Future<List<dynamic>> orderHistory() async =>
