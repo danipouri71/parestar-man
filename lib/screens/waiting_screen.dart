@@ -39,17 +39,20 @@ class _WaitingState extends State<WaitingScreen> {
   }
 
   @override
-  void dispose() {
-    _tick?.cancel();
-    _poll?.cancel();
-    super.dispose();
-  }
-
-  void _initDeadline() {
-    final created = _order?['created_at']?.toString() ?? '';
-    final dt = DateTime.tryParse(created);
-    if (dt != null && widget.isImmediate) {
-      _deadline = dt.add(const Duration(minutes: 15));
+      void _initDeadline() {
+    final raw = (_order?['created_at'] ?? '')?.toString() ?? '';
+    if (raw.isEmpty) return;
+    DateTime? dt = DateTime.tryParse(raw);
+    if (dt == null && raw.length >= 19) {
+      dt = DateTime.tryParse(raw.substring(0, 19).replaceFirst(' ', 'T'));
+    }
+    if (dt == null) return;
+    // تصحیح: سرور ممکن است هر timezone‌ای داشته باشد —
+    // اختلاف را بین ساعت سرور (raw) و NOW() دیتابیس نمی‌دانیم،
+    // پس ساده‌ترین راه مطمئن: تایمر از «الان» شروع شود
+    // (کاربر همین الان سفارش داده — پس deadline از الان + ۱۵ دقیقه)
+    if (widget.isImmediate) {
+      _deadline = DateTime.now().add(const Duration(minutes: 15));
     }
   }
 
