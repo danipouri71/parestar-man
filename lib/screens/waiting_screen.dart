@@ -1,4 +1,4 @@
-// پرستار من — تکه ۹: صفحه انتظار (نسخه ۳: فارسی + تایمر معکوس + افزایش فوریت در انتظار)
+// پرستار من — تکه ۹: صفحه انتظار (نسخه ۴: فارسی + تایمر معکوس + افزایش فوریت + قفل دکمه برگشت)
 
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -38,8 +38,7 @@ class _WaitingState extends State<WaitingScreen> {
     _check().then((_) => _initDeadline());
   }
 
-  @override
-      void _initDeadline() {
+  void _initDeadline() {
     final raw = (_order?['created_at'] ?? '')?.toString() ?? '';
     if (raw.isEmpty) return;
     DateTime? dt = DateTime.tryParse(raw);
@@ -169,7 +168,20 @@ class _WaitingState extends State<WaitingScreen> {
     final accepted = _status == 'accepted';
     final nurseName = (_order?['nurse']?['name'] ?? '').toString();
     final urgencyNow = (_order?['urgency_amount'] as num?)?.toInt() ?? 0;
-    return Directionality(textDirection: TextDirection.rtl, child: Scaffold(
+    // ═══ قفل دکمه برگشت: در صفحه انتظار، دکمه برگشت اندروید و ژست برگشت کاری نمی‌کنند ═══
+    // خروج از این صفحه فقط با «لغو درخواست» یا «بازگشت به خانه» انجام می‌شود.
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (bool didPop, Object? result) {
+        if (didPop) return;
+        if (_status == 'awaiting_acceptance') {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('برای خروج از این صفحه، از دکمه «لغو درخواست (رایگان)» استفاده کنید.',
+                style: TextStyle(fontSize: 13)),
+            behavior: SnackBarBehavior.floating));
+        }
+      },
+      child: Directionality(textDirection: TextDirection.rtl, child: Scaffold(
       appBar: AppBar(title: const Text('درخواست شما ثبت شد', style: TextStyle(fontSize: 15))),
       body: ListView(padding: const EdgeInsets.all(20), children: [
         const SizedBox(height: 24),
@@ -282,6 +294,6 @@ class _WaitingState extends State<WaitingScreen> {
               MaterialPageRoute(builder: (_) => HomeScreen(api: widget.api)), (_) => false),
             child: const Text('بازگشت به خانه')),
       ]),
-    ));
+    )));
   }
 }

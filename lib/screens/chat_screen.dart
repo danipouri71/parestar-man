@@ -1,5 +1,7 @@
 // پرستار من — تکه ۱۰: چت درون‌اپ — وایرفریم U10
 // شماره واسط (تصمیم ۳۲) — به‌روزرسانی هر ۴ ثانیه
+// نسخه ۲ — اصلاح حالت شب: رنگ حباب‌ها، حاشیه و متن پیام‌ها همیشه با تم فعال هماهنگ است
+//   (قبلاً حباب سفیدِ ثابت بود و متن در حالت شب روشن می‌شد → متن روشن روی سفید = ناخوانا)
 
 import 'dart:async';
 import 'package:flutter/material.dart';
@@ -66,18 +68,22 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // تشخیص تم فعال از روی پس‌زمینه اسکفولد — با همه نسخه‌های theme.dart سازگار است
+    final dark = Theme.of(context).scaffoldBackgroundColor == AppColors.bgDark;
     return Directionality(textDirection: TextDirection.rtl, child: Scaffold(
       appBar: AppBar(backgroundColor: Theme.of(context).colorScheme.primary,
-        foregroundColor: Colors.white,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
         title: Text(widget.peerName, style: const TextStyle(fontSize: 15))),
       body: Column(children: [
         Container(width: double.infinity, padding: const EdgeInsets.all(8),
-          color: AppColors.tealSoft,
-          child: const Text('🔒 این گفتگو با شماره واسط است — شماره واقعی طرفین نمایش داده نمی‌شود',
-            textAlign: TextAlign.center, style: TextStyle(fontSize: 10.5, color: AppColors.tealDark))),
+          color: dark ? AppColors.softDark : AppColors.tealSoft,
+          child: Text('🔒 این گفتگو با شماره واسط است — شماره واقعی طرفین نمایش داده نمی‌شود',
+            textAlign: TextAlign.center, style: TextStyle(fontSize: 10.5,
+              color: dark ? AppColors.tealNight : AppColors.tealDark))),
         Expanded(child: _messages.isEmpty
-            ? const Center(child: Text('اولین پیام را بفرستید…',
-                style: TextStyle(fontSize: 12, color: AppColors.subLight)))
+            ? Center(child: Text('اولین پیام را بفرستید…',
+                style: TextStyle(fontSize: 12,
+                  color: dark ? AppColors.subDark : AppColors.subLight)))
             : ListView.builder(controller: _scroll, padding: const EdgeInsets.all(12),
                 itemCount: _messages.length, itemBuilder: (_, i) {
                 final m = _messages[i] as Map<String, dynamic>;
@@ -87,11 +93,15 @@ class _ChatScreenState extends State<ChatScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
                     constraints: const BoxConstraints(maxWidth: 260),
                     decoration: BoxDecoration(
-                      color: mine ? const Color(0xFFE5F6F4) : Colors.white,
-                      border: Border.all(color: AppColors.lineLight),
+                      color: mine
+                          ? (dark ? const Color(0xFF11403A) : const Color(0xFFE5F6F4))
+                          : (dark ? AppColors.cardDark : Colors.white),
+                      border: Border.all(
+                          color: dark ? AppColors.lineDark : AppColors.lineLight),
                       borderRadius: BorderRadius.circular(12)),
                     child: Text((m['body'] ?? '').toString(),
-                        style: const TextStyle(fontSize: 12.5, height: 1.7))));
+                        style: TextStyle(fontSize: 12.5, height: 1.7,
+                          color: dark ? AppColors.textDark : AppColors.textLight))));
               })),
         SafeArea(child: Padding(padding: const EdgeInsets.all(10), child: Row(children: [
           Expanded(child: TextField(controller: _input,
