@@ -49,7 +49,10 @@ Widget _infoBox(String text) => Container(
   child: Text(text, style: const TextStyle(fontSize: 11.5, color: Color(0xFF1E40AF), height: 1.9)),
 );
 
+// priceBox patch v2 (fix2) - dark-mode safe price box
 Widget _priceBox(Map<String, dynamic>? q, {int urgency = 0}) {
+  final dark = WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark;
+  final txt = dark ? AppColors.textDark : AppColors.textLight;
   final base = q == null ? 0 : (q['base_price'] as num).toInt();
   final travel = q == null ? 0 : (q['travel_fee'] as num).toInt();
   final total = base + travel + urgency;
@@ -57,15 +60,16 @@ Widget _priceBox(Map<String, dynamic>? q, {int urgency = 0}) {
     mainAxisAlignment: MainAxisAlignment.spaceBetween,
     children: [
       Expanded(child: Text(l, style: TextStyle(fontSize: 12.5,
-          fontWeight: bold ? FontWeight.bold : FontWeight.normal))),
+          fontWeight: bold ? FontWeight.bold : FontWeight.normal, color: txt))),
       Text(v, style: TextStyle(fontSize: 12.5,
           fontWeight: bold ? FontWeight.bold : FontWeight.normal,
-          color: bold ? (WidgetsBinding.instance.platformDispatcher.platformBrightness == Brightness.dark ? AppColors.tealNight : AppColors.teal) : null)),
+          color: bold ? (dark ? AppColors.tealNight : AppColors.teal) : txt)),
     ]);
   return Container(
     padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: AppColors.lineLight)),
+    decoration: BoxDecoration(color: dark ? AppColors.cardDark : Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: dark ? AppColors.lineDark : AppColors.lineLight)),
     child: Column(children: [
       row('قیمت مبنا', base == 0 ? '—' : '${money(base)} تومان'),
       const SizedBox(height: 6),
