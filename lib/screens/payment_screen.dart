@@ -112,14 +112,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
             style: Theme.of(context).textTheme.bodySmall),
         const SizedBox(height: 8),
         Wrap(spacing: 8, children: [
-          for (final t in const [0, 30000, 50000, 100000])
+          for (final t in const [100000, 200000, 300000])
             ChoiceChip(label: Text(t == 0 ? '۰' : '+${money(t)}',
                 style: const TextStyle(fontSize: 12)),
               selected: _tip == t, onSelected: (_) => setState(() => _tip = t),
               selectedColor: AppColors.tealSoft),
-          ChoiceChip(label: Text(_tip > 0 && _tip != 30000 && _tip != 50000 && _tip != 100000
+          ChoiceChip(label: Text(_tip > 0 && _tip != 100000 && _tip != 200000 && _tip != 300000
               ? '${money(_tip)} ✓' : 'دلخواه', style: const TextStyle(fontSize: 12)),
-            selected: _tip > 0 && _tip != 30000 && _tip != 50000 && _tip != 100000,
+            selected: _tip > 0 && _tip != 100000 && _tip != 200000 && _tip != 300000,
             onSelected: (_) => _customTip(), selectedColor: AppColors.tealSoft),
         ]),
 

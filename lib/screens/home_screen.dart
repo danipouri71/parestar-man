@@ -192,7 +192,7 @@ class _NotificationsTabState extends State<_NotificationsTab> {
   }
 }
 
-/* ═══════════ تب پروفایل — سوییچ سه‌حالته واقعی (تصمیم ۳۰) ═══════════ */
+/* ═══════════ تب پروفایل — سوییچ سه‌حالته واقعی ═══════════ */
 
 class _ProfileTab extends StatelessWidget {
   const _ProfileTab({required this.api});
