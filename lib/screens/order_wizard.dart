@@ -601,7 +601,7 @@ class _U6State extends State<ReviewScreen> {
         api: widget.api,
         orderId: (r['order_id'] as num).toInt(),
         code: (r['code'] ?? '').toString(),
-        initialTotal: ((r['base_price'] as num?)?.toInt() ?? 0),
+        initialTotal: ((r['base_price'] as num?)?.toInt() ?? 0) + ((r['travel_fee'] as num?)?.toInt() ?? 0),
         isImmediate: widget.draft.immediate,
       )));
     } on ApiException catch (e) {
